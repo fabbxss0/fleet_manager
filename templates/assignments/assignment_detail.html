@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load fleet_tags %}
+{% block content %}
+{% with a=object %}
+<div class="card mb-3"><div class="card-body d-flex flex-wrap gap-3 align-items-center">
+  <div class="kpi-icon tone-blue"><i class="bi bi-arrow-left-right"></i></div>
+  <div class="flex-grow-1">
+    <div class="d-flex flex-wrap gap-2 align-items-center"><a class="plate" href="{{ a.vehicle.get_absolute_url }}">{{ a.vehicle.registration_number }}</a>
+      <i class="bi bi-arrow-right"></i><a class="fw-semibold" href="{{ a.driver.get_absolute_url }}">{{ a.driver.full_name }}</a>
+      {% status_badge a.status a.get_status_display %}{% if a.is_overdue %}<span class="badge badge-soft-danger">Retour en retard</span>{% endif %}</div>
+    <div class="text-muted small mt-1">{{ a.vehicle.brand }} {{ a.vehicle.model }} · créée le {{ a.created_at|date:"d/m/Y H:i" }}</div>
+  </div>
+  {% if a.is_active %}
+  <div class="d-flex flex-wrap gap-2">
+    <a href="{% url 'assignments:return' a.pk %}" class="btn btn-navy"><i class="bi bi-box-arrow-in-left me-1"></i>Enregistrer le retour</a>
+    <a href="{% url 'assignments:update' a.pk %}" class="btn btn-light"><i class="bi bi-pencil me-1"></i>Modifier</a>
+    <button class="btn btn-light text-danger" data-confirm-url="{% url 'assignments:cancel' a.pk %}" data-confirm-title="Annuler cette affectation ?" data-confirm-text="Le véhicule sera libéré. L'affectation restera visible dans l'historique avec le statut « Annulée »." data-confirm-button="Annuler l'affectation"><i class="bi bi-x-circle me-1"></i>Annuler</button>
+  </div>
+  {% endif %}
+</div></div>
+<div class="row g-3">
+  <div class="col-lg-6"><div class="card h-100"><div class="card-header"><i class="bi bi-calendar-range"></i> Période et kilométrage</div><div class="card-body"><dl class="fm-dl">
+    <dt>Date de début</dt><dd>{{ a.start_date|date:"d/m/Y" }}</dd>
+    <dt>Date de fin prévue</dt><dd>{{ a.expected_end_date|date:"d/m/Y" }}</dd>
+    <dt>Retour effectif</dt><dd>{{ a.actual_return_date|date:"d/m/Y"|default:"—" }}</dd>
+    <dt>Km au départ</dt><dd>{{ a.start_mileage|km }}</dd>
+    <dt>Km au retour</dt><dd>{{ a.return_mileage|km }}</dd>
+    <dt>Distance parcourue</dt><dd class="fw-bold">{{ a.distance|km }}</dd>
+  </dl></div></div></div>
+  <div class="col-lg-6"><div class="card h-100"><div class="card-header"><i class="bi bi-geo-alt"></i> Mission</div><div class="card-body"><dl class="fm-dl">
+    <dt>Motif</dt><dd>{{ a.purpose }}</dd>
+    <dt>Destination</dt><dd>{{ a.destination|default:"—" }}</dd>
+    <dt>Observations</dt><dd>{{ a.notes|default:"—"|linebreaksbr }}</dd>
+  </dl></div></div></div>
+</div>
+{% endwith %}
+{% endblock %}

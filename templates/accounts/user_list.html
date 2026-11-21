@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+  <p class="text-muted mb-0">Gérez les comptes et les rôles d'accès à l'application.</p>
+  <a href="{% url 'accounts:user_create' %}" class="btn btn-primary ms-auto"><i class="bi bi-person-plus me-1"></i>Nouvel utilisateur</a>
+</div>
+<div class="card">
+  <form class="fm-toolbar js-autofilter" method="get">
+    <input type="search" name="q" value="{{ q }}" class="form-control fm-filter-search" placeholder="Nom, identifiant, email…" data-autofocus>
+    <select name="role" class="form-select"><option value="">Tous les rôles</option>
+      {% for v, l in roles %}<option value="{{ v }}" {% if current_filters.role == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+  </form>
+  <div class="table-responsive"><table class="table table-hover">
+    <thead><tr><th>Utilisateur</th><th>Identifiant</th><th>Rôle</th><th>Fiche conducteur</th><th>Statut</th><th>Dernière connexion</th><th></th></tr></thead>
+    <tbody>
+    {% for u in object_list %}
+      <tr>
+        <td><div class="d-flex align-items-center gap-2"><span class="fm-avatar">{{ u.initials }}</span><div><div class="cell-main">{{ u.display_name }}</div><div class="cell-sub">{{ u.email|default:"—" }}</div></div></div></td>
+        <td>{{ u.username }}</td>
+        <td><span class="badge {% if u.is_admin %}badge-soft-danger{% elif u.is_manager %}badge-soft-primary{% else %}badge-soft-info{% endif %}">{{ u.get_role_display }}</span></td>
+        <td>{% if u.driver_profile %}<a href="{{ u.driver_profile.get_absolute_url }}">{{ u.driver_profile.full_name }}</a>{% else %}—{% endif %}</td>
+        <td>{% if u.is_active %}<span class="badge badge-soft-success">Actif</span>{% else %}<span class="badge badge-soft-secondary">Désactivé</span>{% endif %}</td>
+        <td>{{ u.last_login|date:"d/m/Y H:i"|default:"Jamais" }}</td>
+        <td class="row-actions">
+          <a class="btn btn-light btn-sm" href="{% url 'accounts:user_update' u.pk %}" title="Modifier"><i class="bi bi-pencil"></i></a>
+          <a class="btn btn-light btn-sm" href="{% url 'accounts:user_set_password' u.pk %}" title="Réinitialiser le mot de passe"><i class="bi bi-key"></i></a>
+          {% if u != user %}<button class="btn btn-light btn-sm text-danger" title="Supprimer" data-confirm-url="{% url 'accounts:user_delete' u.pk %}" data-confirm-title="Supprimer le compte « {{ u.username }} » ?" data-confirm-text="L'utilisateur ne pourra plus se connecter. Les données du parc ne sont pas affectées."><i class="bi bi-trash"></i></button>{% endif %}
+        </td>
+      </tr>
+    {% empty %}<tr><td colspan="7">{% include "partials/empty.html" with icon="people" %}</td></tr>{% endfor %}
+    </tbody></table></div>
+  {% include "partials/pagination.html" %}
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<form class="card" method="post" enctype="multipart/form-data" novalidate>{% csrf_token %}
+  <div class="card-header"><i class="bi bi-shield-check"></i> {{ page_title }}</div>
+  {% include "partials/form_errors.html" %}
+  <div class="fm-form-section"><h6><i class="bi bi-file-earmark-text"></i> Contrat</h6><div class="row">
+    {% include "partials/field.html" with field=form.vehicle col="col-md-4" %}
+    {% include "partials/field.html" with field=form.company col="col-md-4" %}
+    {% include "partials/field.html" with field=form.policy_number col="col-md-4" %}
+    {% include "partials/field.html" with field=form.insurance_type col="col-md-4" %}
+    {% include "partials/field.html" with field=form.premium col="col-md-4" %}
+  </div></div>
+  <div class="fm-form-section"><h6><i class="bi bi-calendar-range"></i> Dates</h6><div class="row">
+    {% include "partials/field.html" with field=form.subscription_date col="col-md-4" %}
+    {% include "partials/field.html" with field=form.start_date col="col-md-4" %}
+    {% include "partials/field.html" with field=form.end_date col="col-md-4" %}
+  </div></div>
+  <div class="fm-form-section"><h6><i class="bi bi-paperclip"></i> Justificatif et observations</h6><div class="row">
+    {% include "partials/field.html" with field=form.document %}
+    {% include "partials/field.html" with field=form.notes %}
+  </div></div>
+  <div class="fm-form-actions">
+    <a href="{% if object %}{{ object.get_absolute_url }}{% else %}{% url 'insurance:list' %}{% endif %}" class="btn btn-light">Annuler</a>
+    <button class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Enregistrer</button>
+  </div>
+</form>
+{% endblock %}

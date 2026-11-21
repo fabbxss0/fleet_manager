@@ -1,0 +1,46 @@
+{% load static %}<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Connexion · FLEET MANAGER</title>
+  <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
+  <link rel="stylesheet" href="{% static 'vendor/inter/inter.css' %}">
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap-icons/bootstrap-icons.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/fleet.css' %}">
+</head>
+<body>
+<div class="fm-auth">
+  <section class="fm-auth-visual">
+    <div class="fm-brand p-0"><span class="fm-brand-mark"><i class="bi bi-car-front-fill"></i></span>
+      <span><span class="fm-brand-name d-block">FLEET MANAGER</span><span class="fm-brand-sub">Gestion intelligente du parc automobile</span></span></div>
+    <div>
+      <h1>Votre parc automobile, sous contrôle à chaque kilomètre.</h1>
+      <ul class="mt-4">
+        <li><i class="bi bi-check-circle-fill"></i> Véhicules, conducteurs et affectations centralisés</li>
+        <li><i class="bi bi-check-circle-fill"></i> Alertes automatiques : assurances, permis, entretiens</li>
+        <li><i class="bi bi-check-circle-fill"></i> Tableaux de bord et rapports PDF / Excel</li>
+      </ul>
+    </div>
+    <small class="text-white-50">Fuseau horaire : Africa/Ouagadougou · Montants en FCFA</small>
+  </section>
+  <section class="fm-auth-form">
+    <div class="inner">
+      <div class="d-lg-none fm-brand p-0 mb-4 text-dark"><span class="fm-brand-mark"><i class="bi bi-car-front-fill"></i></span><span class="fm-brand-name">FLEET MANAGER</span></div>
+      <h2 class="fw-bold mb-1">Connexion</h2>
+      <p class="text-muted mb-4">Identifiez-vous pour accéder à votre espace.</p>
+      {% if form.errors %}
+      <div class="alert alert-danger d-flex gap-2"><i class="bi bi-x-octagon-fill mt-1"></i><div>{% for e in form.non_field_errors %}{{ e }}{% endfor %}</div></div>
+      {% endif %}
+      <form method="post" novalidate>{% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}">
+        <div class="mb-3"><label class="form-label" for="id_username">{{ form.username.label }}</label>{{ form.username }}</div>
+        <div class="mb-4"><label class="form-label" for="id_password">{{ form.password.label }}</label>{{ form.password }}</div>
+        <button class="btn btn-primary w-100 py-2" type="submit"><i class="bi bi-box-arrow-in-right me-1"></i> Se connecter</button>
+      </form>
+      <p class="small text-muted mt-4 mb-0"><i class="bi bi-lock me-1"></i>Mot de passe oublié ? Contactez l'administrateur de l'application.</p>
+    </div>
+  </section>
+</div>
+</body>
+</html>

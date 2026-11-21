@@ -1,0 +1,5 @@
+<div class="fm-chips mb-3">
+  <a href="{% url 'maintenance:list' %}" class="fm-chip {% if request.resolver_match.url_name == 'list' %}active{% endif %}"><i class="bi bi-list-ul me-1"></i>Historique</a>
+  <a href="{% url 'maintenance:due' %}" class="fm-chip {% if request.resolver_match.url_name == 'due' %}active{% endif %}"><i class="bi bi-calendar-check me-1"></i>À prévoir</a>
+  <a href="{% url 'maintenance:expenses' %}" class="fm-chip {% if request.resolver_match.url_name == 'expenses' %}active{% endif %}"><i class="bi bi-cash-coin me-1"></i>Dépenses</a>
+</div>

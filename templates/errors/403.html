@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card"><div class="empty-state py-5"><i class="bi bi-shield-lock"></i><h5>Accès refusé</h5>
+<p>Votre profil ne vous permet pas d'accéder à cette page. Si vous pensez qu'il s'agit d'une erreur, contactez l'administrateur.</p>
+<a href="{% url 'dashboard:home' %}" class="btn btn-primary">Retour à l'accueil</a></div></div>
+{% endblock %}

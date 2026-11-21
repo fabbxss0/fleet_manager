@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load fleet_tags %}
+{% block content %}
+<form class="card mx-auto" style="max-width:760px" method="post" novalidate>{% csrf_token %}
+  <div class="card-header"><i class="bi bi-box-arrow-in-left"></i> Retour du véhicule <span class="plate ms-2">{{ assignment.vehicle.registration_number }}</span></div>
+  <div class="fm-form-section">
+    <dl class="fm-dl mb-3">
+      <dt>Conducteur</dt><dd>{{ assignment.driver.full_name }}</dd>
+      <dt>Départ</dt><dd>{{ assignment.start_date|date:"d/m/Y" }} — {{ assignment.start_mileage|km }}</dd>
+      <dt>Retour prévu</dt><dd>{{ assignment.expected_end_date|date:"d/m/Y" }}{% if assignment.is_overdue %} <span class="badge badge-soft-danger">En retard</span>{% endif %}</dd>
+    </dl>
+  </div>
+  {% include "partials/form_errors.html" %}
+  <div class="fm-form-section"><div class="row">
+    {% include "partials/field.html" with field=form.return_date %}
+    {% include "partials/field.html" with field=form.return_mileage %}
+    {% include "partials/field.html" with field=form.notes col="col-12" %}
+  </div></div>
+  <div class="fm-form-actions">
+    <a href="{{ assignment.get_absolute_url }}" class="btn btn-light">Annuler</a>
+    <button class="btn btn-navy"><i class="bi bi-check2-circle me-1"></i>Clôturer l'affectation</button>
+  </div>
+</form>
+{% endblock %}

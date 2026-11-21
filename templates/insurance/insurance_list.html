@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load fleet_tags %}
+{% block content %}
+<div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+  <div class="fm-chips">
+    <a href="?" class="fm-chip {% if not etat %}active{% endif %}">Toutes<span class="n">{{ counts.all }}</span></a>
+    <a href="?etat=valide" class="fm-chip {% if etat == 'valide' %}active{% endif %}">Valides</a>
+    <a href="?etat=bientot" class="fm-chip {% if etat == 'bientot' %}active{% endif %}"><i class="bi bi-hourglass-split text-warning me-1"></i>Expirent bientôt<span class="n">{{ counts.expiring }}</span></a>
+    <a href="?etat=expiree" class="fm-chip {% if etat == 'expiree' %}active{% endif %}"><i class="bi bi-x-circle text-danger me-1"></i>Expirées<span class="n">{{ counts.expired }}</span></a>
+  </div>
+  <a href="{% url 'insurance:create' %}" class="btn btn-primary ms-auto"><i class="bi bi-shield-plus me-1"></i>Ajouter une assurance</a>
+</div>
+{% if uninsured %}
+<div class="alert alert-danger d-flex gap-2"><i class="bi bi-shield-exclamation mt-1"></i><div><strong>{{ uninsured|length }} véhicule(s) en service sans assurance valide aujourd'hui :</strong>
+  {% for v in uninsured %}<a href="{% url 'insurance:create' %}?vehicle={{ v.pk }}" class="plate ms-1">{{ v.registration_number }}</a>{% endfor %}</div></div>
+{% endif %}
+<div class="card">
+  <form class="fm-toolbar js-autofilter" method="get">
+    {% if etat %}<input type="hidden" name="etat" value="{{ etat }}">{% endif %}
+    <input type="search" name="q" value="{{ q }}" class="form-control fm-filter-search" placeholder="N° de police, compagnie, immatriculation…" data-autofocus>
+    <select name="vehicle" class="form-select"><option value="">Tous les véhicules</option>
+      {% for v in vehicles %}<option value="{{ v.pk }}" {% if current_filters.vehicle == v.pk|stringformat:"s" %}selected{% endif %}>{{ v.registration_number }}</option>{% endfor %}</select>
+    <select name="insurance_type" class="form-select"><option value="">Tous les types</option>
+      {% for v, l in types %}<option value="{{ v }}" {% if current_filters.insurance_type == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+  </form>
+  <div class="table-responsive"><table class="table table-hover">
+    <thead><tr><th>Véhicule</th><th>Compagnie / police</th><th>Type</th><th>Validité</th><th class="text-end">Prime</th><th>État</th><th></th></tr></thead>
+    <tbody>
+    {% for i in object_list %}
+      <tr>
+        <td><a href="{{ i.vehicle.get_absolute_url }}" class="plate">{{ i.vehicle.registration_number }}</a></td>
+        <td><a href="{{ i.get_absolute_url }}" class="cell-main">{{ i.company }}</a><div class="cell-sub">{{ i.policy_number }}</div></td>
+        <td>{{ i.get_insurance_type_display }}</td>
+        <td>{{ i.start_date|date:"d/m/Y" }} → {{ i.end_date|date:"d/m/Y" }}<div class="cell-sub">{% if i.is_expired %}expirée depuis {{ i.days_remaining|absolute }} j{% else %}{{ i.days_remaining }} j restants{% endif %}</div></td>
+        <td class="text-end tabular">{{ i.premium|fcfa }}</td>
+        <td>{% status_badge i.state i.state_label %}</td>
+        <td class="row-actions">
+          <a class="btn btn-light btn-sm" href="{% url 'insurance:update' i.pk %}" title="Modifier"><i class="bi bi-pencil"></i></a>
+          <button class="btn btn-light btn-sm text-danger" title="Supprimer" data-confirm-url="{% url 'insurance:delete' i.pk %}" data-confirm-title="Supprimer la police {{ i.policy_number }} ?" data-confirm-text="L'historique d'assurance de ce véhicule sera modifié. Action définitive."><i class="bi bi-trash"></i></button>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="7">{% url 'insurance:create' as create_url %}{% include "partials/empty.html" with icon="shield" title="Aucune assurance" action_url=create_url action_label="Ajouter une assurance" %}</td></tr>
+    {% endfor %}
+    </tbody></table></div>
+  {% include "partials/pagination.html" %}
+</div>
+{% endblock %}

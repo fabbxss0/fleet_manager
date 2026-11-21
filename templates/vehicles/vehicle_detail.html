@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% load fleet_tags %}
+{% block content %}
+{% with v=object %}
+<div class="card mb-3"><div class="card-body">
+  <div class="fm-hero">
+    <div class="fm-hero-photo">{% if v.photo %}<img src="{{ v.photo.url }}" alt="Photo du véhicule">{% else %}<i class="bi bi-car-front"></i>{% endif %}</div>
+    <div class="flex-grow-1">
+      <div class="d-flex flex-wrap gap-2 align-items-center mb-1"><span class="plate fs-6">{{ v.registration_number }}</span>{% status_badge v.status v.get_status_display %}</div>
+      <h4 class="mb-1">{{ v.brand }} {{ v.model }}</h4>
+      <div class="text-muted">{{ v.get_category_display }} · {{ v.get_fuel_type_display }} · {{ v.year }} · {{ v.mileage|km }}</div>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      {% if v.is_assignable %}<a href="{% url 'assignments:create' %}?vehicle={{ v.pk }}" class="btn btn-primary"><i class="bi bi-arrow-left-right me-1"></i>Affecter</a>{% endif %}
+      <a href="{% url 'maintenance:create' %}?vehicle={{ v.pk }}" class="btn btn-light"><i class="bi bi-tools me-1"></i>Entretien</a>
+      <a href="{% url 'insurance:create' %}?vehicle={{ v.pk }}" class="btn btn-light"><i class="bi bi-shield-plus me-1"></i>Assurance</a>
+      <a href="{% url 'vehicles:update' v.pk %}" class="btn btn-light"><i class="bi bi-pencil"></i></a>
+      <button class="btn btn-light text-danger" title="Supprimer" data-confirm-url="{% url 'vehicles:delete' v.pk %}" data-confirm-title="Supprimer {{ v.registration_number }} ?" data-confirm-text="{% if has_history %}Ce véhicule a un historique : la suppression sera refusée. Préférez le statut « Hors service ».{% else %}Cette action est définitive.{% endif %}"><i class="bi bi-trash"></i></button>
+    </div>
+  </div>
+</div></div>
+
+{% if alerts %}
+<div class="card mb-3 border-warning">
+  {% for a in alerts %}<a href="{% url 'alerts:open' a.pk %}" class="alert-item text-reset"><span class="alert-bar prio-{{ a.priority }}"></span><div><div class="alert-title">{{ a.title }}</div><div class="small text-muted">{{ a.description }}</div></div></a>{% endfor %}
+</div>
+{% endif %}
+
+<div class="row g-3 mb-3">
+  <div class="col-md-4"><div class="card kpi"><div class="kpi-icon tone-blue"><i class="bi bi-arrow-left-right"></i></div><div><div class="kpi-value">{{ v.assignments.count }}</div><div class="kpi-label">Affectations</div></div></div></div>
+  <div class="col-md-4"><div class="card kpi"><div class="kpi-icon tone-amber"><i class="bi bi-tools"></i></div><div><div class="kpi-value">{{ v.maintenances.count }}</div><div class="kpi-label">Interventions</div></div></div></div>
+  <div class="col-md-4"><div class="card kpi"><div class="kpi-icon tone-red"><i class="bi bi-cash-coin"></i></div><div><div class="kpi-value fs-5">{{ v.total_maintenance_cost|fcfa }}</div><div class="kpi-label">Coût total des entretiens</div></div></div></div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="card mb-3"><div class="card-header"><i class="bi bi-info-circle"></i> Fiche technique</div><div class="card-body">
+      <dl class="fm-dl">
+        <dt>N° de châssis</dt><dd class="text-break">{{ v.chassis_number }}</dd>
+        <dt>Couleur</dt><dd>{{ v.color|default:"—" }}</dd>
+        <dt>Puissance fiscale</dt><dd>{% if v.fiscal_power %}{{ v.fiscal_power }} CV{% else %}—{% endif %}</dd>
+        <dt>Réservoir</dt><dd>{% if v.tank_capacity %}{{ v.tank_capacity }} L{% else %}—{% endif %}</dd>
+        <dt>Acquisition</dt><dd>{{ v.acquisition_date|date:"d/m/Y" }}</dd>
+        <dt>Prix d'acquisition</dt><dd>{{ v.acquisition_price|fcfa }}</dd>
+        <dt>Observations</dt><dd>{{ v.notes|default:"—"|linebreaksbr }}</dd>
+      </dl>
+    </div></div>
+    <div class="card mb-3"><div class="card-header"><i class="bi bi-person-check"></i> Affectation actuelle</div><div class="card-body">
+      {% with cur=v.current_assignment %}{% if cur %}
+        <a href="{{ cur.driver.get_absolute_url }}" class="fw-semibold">{{ cur.driver.full_name }}</a>
+        <div class="small text-muted mb-2">Depuis le {{ cur.start_date|date:"d/m/Y" }} · retour prévu le {{ cur.expected_end_date|date:"d/m/Y" }}</div>
+        <a href="{% url 'assignments:return' cur.pk %}" class="btn btn-sm btn-navy"><i class="bi bi-box-arrow-in-left me-1"></i>Enregistrer le retour</a>
+      {% else %}<span class="text-muted">Aucune affectation en cours.</span>{% endif %}{% endwith %}
+    </div></div>
+    <div class="card"><div class="card-header"><i class="bi bi-shield-check"></i> Assurance en vigueur</div><div class="card-body">
+      {% with ins=v.current_insurance %}{% if ins %}
+        <a href="{{ ins.get_absolute_url }}" class="fw-semibold">{{ ins.company }}</a> {% status_badge ins.state ins.state_label %}
+        <div class="small text-muted">Police {{ ins.policy_number }} · expire le {{ ins.end_date|date:"d/m/Y" }} ({{ ins.days_remaining }} j)</div>
+      {% else %}<span class="text-danger fw-semibold"><i class="bi bi-exclamation-triangle me-1"></i>Aucune assurance valide</span>{% endif %}{% endwith %}
+    </div></div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card">
+      <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#t-hist" type="button">Historique</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-aff" type="button">Affectations</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-ent" type="button">Entretiens</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-ass" type="button">Assurances</button></li>
+      </ul>
+      <div class="tab-content">
+        <div class="tab-pane fade show active card-body" id="t-hist">
+          {% if timeline %}<ul class="timeline">{% for e in timeline %}
+            <li><span class="tl-icon tone-{% if e.color == 'primary' %}blue{% elif e.color == 'success' %}green{% elif e.color == 'warning' %}amber{% else %}sky{% endif %}"><i class="bi bi-{{ e.icon }}"></i></span>
+              <a href="{{ e.url }}" class="fw-semibold text-reset">{{ e.title }}</a><div class="small text-muted">{{ e.date|date:"d/m/Y" }} · {{ e.text }}</div></li>
+          {% endfor %}</ul>{% else %}{% include "partials/empty.html" with icon="clock-history" title="Aucun historique" text="Les affectations, entretiens et assurances apparaîtront ici." %}{% endif %}
+        </div>
+        <div class="tab-pane fade" id="t-aff"><div class="table-responsive"><table class="table">
+          <thead><tr><th>Conducteur</th><th>Période</th><th class="text-end">Distance</th><th>Statut</th></tr></thead><tbody>
+          {% for a in assignments %}<tr><td><a href="{{ a.get_absolute_url }}">{{ a.driver.full_name }}</a></td><td>{{ a.start_date|date:"d/m/Y" }} → {{ a.actual_return_date|default:a.expected_end_date|date:"d/m/Y" }}</td><td class="text-end">{{ a.distance|km }}</td><td>{% status_badge a.status a.get_status_display %}</td></tr>
+          {% empty %}<tr><td colspan="4" class="text-center text-muted py-4">Aucune affectation.</td></tr>{% endfor %}</tbody></table></div></div>
+        <div class="tab-pane fade" id="t-ent"><div class="table-responsive"><table class="table">
+          <thead><tr><th>Date</th><th>Intervention</th><th>Prestataire</th><th class="text-end">Coût</th><th>Statut</th></tr></thead><tbody>
+          {% for m in maintenances %}<tr><td>{{ m.date|date:"d/m/Y" }}</td><td><a href="{{ m.get_absolute_url }}">{{ m.get_intervention_type_display }}</a></td><td>{{ m.provider }}</td><td class="text-end tabular">{{ m.cost|fcfa }}</td><td>{% status_badge m.status m.get_status_display %}</td></tr>
+          {% empty %}<tr><td colspan="5" class="text-center text-muted py-4">Aucun entretien.</td></tr>{% endfor %}</tbody></table></div></div>
+        <div class="tab-pane fade" id="t-ass"><div class="table-responsive"><table class="table">
+          <thead><tr><th>Compagnie</th><th>Police</th><th>Validité</th><th class="text-end">Prime</th><th>État</th></tr></thead><tbody>
+          {% for i in insurances %}<tr><td><a href="{{ i.get_absolute_url }}">{{ i.company }}</a></td><td>{{ i.policy_number }}</td><td>{{ i.start_date|date:"d/m/Y" }} → {{ i.end_date|date:"d/m/Y" }}</td><td class="text-end tabular">{{ i.premium|fcfa }}</td><td>{% status_badge i.state i.state_label %}</td></tr>
+          {% empty %}<tr><td colspan="5" class="text-center text-muted py-4">Aucune assurance.</td></tr>{% endfor %}</tbody></table></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endwith %}
+{% endblock %}

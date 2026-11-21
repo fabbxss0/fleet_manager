@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% load fleet_tags %}
+{% block content %}
+<div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+  <div class="fm-chips">
+    <a href="?" class="fm-chip {% if not current_filters.status and not request.GET.retard %}active{% endif %}">Toutes</a>
+    <a href="?status=EN_COURS" class="fm-chip {% if current_filters.status == 'EN_COURS' %}active{% endif %}">En cours<span class="n">{{ active_count }}</span></a>
+    <a href="?retard=1" class="fm-chip {% if request.GET.retard %}active{% endif %}"><i class="bi bi-alarm text-danger me-1"></i>Retours en retard<span class="n">{{ overdue_count }}</span></a>
+    <a href="?status=TERMINEE" class="fm-chip {% if current_filters.status == 'TERMINEE' %}active{% endif %}">Terminées</a>
+    <a href="?status=ANNULEE" class="fm-chip {% if current_filters.status == 'ANNULEE' %}active{% endif %}">Annulées</a>
+  </div>
+  <a href="{% url 'assignments:create' %}" class="btn btn-primary ms-auto"><i class="bi bi-plus-lg me-1"></i>Nouvelle affectation</a>
+</div>
+<div class="card">
+  <form class="fm-toolbar js-autofilter" method="get">
+    <input type="search" name="q" value="{{ q }}" class="form-control fm-filter-search" placeholder="Immatriculation, conducteur, destination…" data-autofocus>
+    <select name="status" class="form-select"><option value="">Tous statuts</option>
+      {% for v, l in statuses %}<option value="{{ v }}" {% if current_filters.status == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+  </form>
+  <div class="table-responsive"><table class="table table-hover">
+    <thead><tr><th>Véhicule</th><th>Conducteur</th><th>Début</th><th>Fin prévue / retour</th><th>Destination</th><th class="text-end">Distance</th><th>Statut</th><th></th></tr></thead>
+    <tbody>
+    {% for a in object_list %}
+      <tr>
+        <td><a href="{{ a.vehicle.get_absolute_url }}" class="plate">{{ a.vehicle.registration_number }}</a></td>
+        <td><a href="{{ a.driver.get_absolute_url }}" class="cell-main">{{ a.driver.full_name }}</a><div class="cell-sub">{{ a.purpose|truncatechars:38 }}</div></td>
+        <td>{{ a.start_date|date:"d/m/Y" }}</td>
+        <td>{% if a.actual_return_date %}{{ a.actual_return_date|date:"d/m/Y" }}{% else %}{{ a.expected_end_date|date:"d/m/Y" }}{% if a.is_overdue %} <span class="badge badge-soft-danger">En retard</span>{% endif %}{% endif %}</td>
+        <td>{{ a.destination|default:"—" }}</td>
+        <td class="text-end">{{ a.distance|km }}</td>
+        <td>{% status_badge a.status a.get_status_display %}</td>
+        <td class="row-actions">
+          <a class="btn btn-light btn-sm" href="{{ a.get_absolute_url }}" title="Consulter"><i class="bi bi-eye"></i></a>
+          {% if a.is_active %}<a class="btn btn-navy btn-sm" href="{% url 'assignments:return' a.pk %}" title="Enregistrer le retour"><i class="bi bi-box-arrow-in-left"></i></a>{% endif %}
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="8">{% url 'assignments:create' as create_url %}{% include "partials/empty.html" with icon="arrow-left-right" title="Aucune affectation" action_url=create_url action_label="Nouvelle affectation" %}</td></tr>
+    {% endfor %}
+    </tbody></table></div>
+  {% include "partials/pagination.html" %}
+</div>
+{% endblock %}

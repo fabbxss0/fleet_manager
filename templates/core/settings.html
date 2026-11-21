@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row g-3">
+  <div class="col-lg-8">
+    <form class="card" method="post" novalidate>{% csrf_token %}
+      <div class="card-header"><i class="bi bi-gear"></i> Paramètres de l'application {% if not can_edit %}<span class="badge badge-soft-secondary ms-2">Lecture seule</span>{% endif %}</div>
+      {% include "partials/form_errors.html" %}
+      <div class="fm-form-section"><h6><i class="bi bi-building"></i> Organisation</h6><div class="row">
+        {% include "partials/field.html" with field=form.organization_name col="col-12" %}
+      </div></div>
+      <div class="fm-form-section"><h6><i class="bi bi-bell"></i> Seuils des alertes automatiques</h6><div class="row">
+        {% include "partials/field.html" with field=form.alert_days_warning %}
+        {% include "partials/field.html" with field=form.alert_days_urgent %}
+        {% include "partials/field.html" with field=form.maintenance_days_threshold %}
+        {% include "partials/field.html" with field=form.maintenance_km_threshold %}
+        {% include "partials/field.html" with field=form.technical_control_days %}
+      </div></div>
+      {% if can_edit %}<div class="fm-form-actions"><button class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Enregistrer</button></div>{% endif %}
+    </form>
+  </div>
+  <div class="col-lg-4">
+    <div class="card mb-3"><div class="card-header"><i class="bi bi-person-circle"></i> Mon compte</div><div class="list-group list-group-flush">
+      <a href="{% url 'accounts:profile' %}" class="list-group-item list-group-item-action"><i class="bi bi-person me-2"></i>Modifier mon profil</a>
+      <a href="{% url 'accounts:password_change' %}" class="list-group-item list-group-item-action"><i class="bi bi-key me-2"></i>Changer mon mot de passe</a>
+      {% if user.is_admin %}<a href="{% url 'accounts:user_list' %}" class="list-group-item list-group-item-action"><i class="bi bi-people me-2"></i>Gérer les utilisateurs</a>{% endif %}
+    </div></div>
+    <div class="card"><div class="card-header"><i class="bi bi-info-circle"></i> Informations système</div><div class="card-body"><dl class="fm-dl small">
+      <dt>Langue</dt><dd>Français</dd><dt>Devise</dt><dd>Franc CFA (FCFA)</dd>
+      <dt>Format des dates</dt><dd>JJ/MM/AAAA</dd><dt>Fuseau horaire</dt><dd>Africa/Ouagadougou</dd>
+    </dl></div></div>
+  </div>
+</div>
+{% endblock %}

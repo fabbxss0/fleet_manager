@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load fleet_tags %}
+{% block content %}
+{% with i=object %}
+<div class="card mb-3"><div class="card-body d-flex flex-wrap gap-3 align-items-center">
+  <div class="kpi-icon {% if i.state == 'expired' %}tone-red{% elif i.state == 'expiring' %}tone-amber{% else %}tone-green{% endif %}"><i class="bi bi-shield-check"></i></div>
+  <div class="flex-grow-1"><h5 class="mb-1">{{ i.company }} {% status_badge i.state i.state_label %}</h5>
+    <div class="text-muted">Police {{ i.policy_number }} · <a class="plate" href="{{ i.vehicle.get_absolute_url }}">{{ i.vehicle.registration_number }}</a></div></div>
+  <div class="text-end"><div class="kpi-label">{% if i.is_expired %}Expirée depuis{% else %}Jours restants{% endif %}</div><div class="kpi-value">{{ i.days_remaining|absolute }} j</div></div>
+  <div class="d-flex gap-2">
+    {% if i.state == 'expired' or i.state == 'expiring' %}<a href="{% url 'insurance:create' %}?vehicle={{ i.vehicle.pk }}" class="btn btn-primary"><i class="bi bi-arrow-repeat me-1"></i>Renouveler</a>{% endif %}
+    <a href="{% url 'insurance:update' i.pk %}" class="btn btn-light"><i class="bi bi-pencil me-1"></i>Modifier</a>
+    <button class="btn btn-light text-danger" data-confirm-url="{% url 'insurance:delete' i.pk %}" data-confirm-title="Supprimer cette assurance ?" data-confirm-text="Action définitive."><i class="bi bi-trash"></i></button>
+  </div>
+</div></div>
+<div class="row g-3">
+  <div class="col-lg-5"><div class="card h-100"><div class="card-header"><i class="bi bi-file-earmark-text"></i> Contrat</div><div class="card-body"><dl class="fm-dl">
+    <dt>Type</dt><dd>{{ i.get_insurance_type_display }}</dd>
+    <dt>Souscription</dt><dd>{{ i.subscription_date|date:"d/m/Y" }}</dd>
+    <dt>Validité</dt><dd>{{ i.start_date|date:"d/m/Y" }} → {{ i.end_date|date:"d/m/Y" }}</dd>
+    <dt>Prime</dt><dd>{{ i.premium|fcfa }}</dd>
+    <dt>Justificatif</dt><dd>{% if i.document %}<a href="{{ i.document.url }}" target="_blank" rel="noopener"><i class="bi bi-file-earmark-arrow-down me-1"></i>Télécharger</a>{% else %}—{% endif %}</dd>
+    <dt>Observations</dt><dd>{{ i.notes|default:"—"|linebreaksbr }}</dd>
+  </dl></div></div></div>
+  <div class="col-lg-7"><div class="card h-100"><div class="card-header"><i class="bi bi-clock-history"></i> Historique des assurances du véhicule</div>
+    <div class="table-responsive"><table class="table"><thead><tr><th>Compagnie</th><th>Police</th><th>Validité</th><th>État</th></tr></thead><tbody>
+    {% for h in history %}<tr><td><a href="{{ h.get_absolute_url }}">{{ h.company }}</a></td><td>{{ h.policy_number }}</td><td>{{ h.start_date|date:"d/m/Y" }} → {{ h.end_date|date:"d/m/Y" }}</td><td>{% status_badge h.state h.state_label %}</td></tr>
+    {% empty %}<tr><td colspan="4" class="text-center text-muted py-4">Aucune autre police pour ce véhicule.</td></tr>{% endfor %}</tbody></table></div></div></div>
+</div>
+{% endwith %}
+{% endblock %}

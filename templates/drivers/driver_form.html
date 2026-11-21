@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<form class="card" method="post" enctype="multipart/form-data" novalidate>{% csrf_token %}
+  <div class="card-header"><i class="bi bi-person-badge"></i> {{ page_title }}</div>
+  {% include "partials/form_errors.html" %}
+  <div class="fm-form-section"><h6><i class="bi bi-person"></i> État civil et contact</h6><div class="row">
+    {% include "partials/field.html" with field=form.last_name col="col-md-4" %}
+    {% include "partials/field.html" with field=form.first_name col="col-md-4" %}
+    {% include "partials/field.html" with field=form.gender col="col-md-4" %}
+    {% include "partials/field.html" with field=form.birth_date col="col-md-4" %}
+    {% include "partials/field.html" with field=form.phone col="col-md-4" %}
+    {% include "partials/field.html" with field=form.email col="col-md-4" %}
+    {% include "partials/field.html" with field=form.address col="col-12" %}
+  </div></div>
+  <div class="fm-form-section"><h6><i class="bi bi-person-vcard"></i> Permis de conduire</h6><div class="row">
+    {% include "partials/field.html" with field=form.license_number col="col-md-6" %}
+    {% include "partials/field.html" with field=form.license_category col="col-md-6" %}
+    {% include "partials/field.html" with field=form.license_issue_date %}
+    {% include "partials/field.html" with field=form.license_expiry_date %}
+  </div></div>
+  <div class="fm-form-section"><h6><i class="bi bi-briefcase"></i> Situation professionnelle</h6><div class="row">
+    {% include "partials/field.html" with field=form.hire_date col="col-md-4" %}
+    {% include "partials/field.html" with field=form.status col="col-md-4" %}
+    {% include "partials/field.html" with field=form.photo col="col-md-4" %}
+    {% include "partials/field.html" with field=form.notes col="col-12" %}
+  </div></div>
+  <div class="fm-form-actions">
+    <a href="{% if object %}{{ object.get_absolute_url }}{% else %}{% url 'drivers:list' %}{% endif %}" class="btn btn-light">Annuler</a>
+    <button class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Enregistrer</button>
+  </div>
+</form>
+{% endblock %}

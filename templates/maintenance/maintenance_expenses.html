@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load static fleet_tags %}
+{% block content %}
+{% include "maintenance/_tabs.html" %}
+<div class="card mb-3">
+  <form class="fm-toolbar js-autofilter border-0" method="get">
+    <span class="fw-semibold">Période :</span>
+    <input type="date" name="du" value="{{ du }}" class="form-control" aria-label="Du">
+    <input type="date" name="au" value="{{ au }}" class="form-control" aria-label="Au">
+    {% if du or au %}<a href="?" class="btn btn-link btn-sm">Toute la période</a>{% endif %}
+    <div class="ms-auto text-end"><div class="kpi-label">Total des dépenses</div><div class="kpi-value fs-4">{{ total|fcfa }}</div></div>
+  </form>
+</div>
+<div class="row g-3 mb-3">
+  <div class="col-lg-8"><div class="card h-100"><div class="card-header"><i class="bi bi-graph-up"></i> Évolution mensuelle (12 derniers mois)</div><div class="card-body"><div class="chart-box"><canvas id="monthlyChart"></canvas></div></div></div></div>
+  <div class="col-lg-4"><div class="card h-100"><div class="card-header"><i class="bi bi-pie-chart"></i> Par type d'intervention</div>
+    <div class="table-responsive"><table class="table"><tbody>
+    {% for t in by_type %}<tr><td>{{ t.label }}<div class="cell-sub">{{ t.count }} intervention(s)</div></td><td class="text-end tabular fw-semibold">{{ t.total|fcfa }}</td></tr>
+    {% empty %}<tr><td class="text-center text-muted py-4">Aucune dépense.</td></tr>{% endfor %}</tbody></table></div></div></div>
+</div>
+<div class="card"><div class="card-header"><i class="bi bi-car-front"></i> Coût total des entretiens par véhicule</div>
+  <div class="table-responsive"><table class="table table-hover"><thead><tr><th>Véhicule</th><th class="text-end">Interventions</th><th class="text-end">Coût total</th><th style="width:30%">Part</th></tr></thead><tbody>
+  {% for r in by_vehicle %}<tr>
+    <td><a class="plate" href="{% url 'vehicles:detail' r.vehicle__id %}">{{ r.vehicle__registration_number }}</a> <span class="text-muted small">{{ r.vehicle__brand }} {{ r.vehicle__model }}</span></td>
+    <td class="text-end">{{ r.count }}</td><td class="text-end tabular fw-semibold">{{ r.total|fcfa }}</td>
+    <td>{% widthratio r.total total 100 as pct %}<div class="d-flex align-items-center gap-2"><div class="progress flex-grow-1" style="height:6px"><div class="progress-bar" style="width:{{ pct }}%"></div></div><span class="small text-muted">{{ pct }} %</span></div></td></tr>
+  {% empty %}<tr><td colspan="4" class="text-center text-muted py-4">Aucune dépense sur cette période.</td></tr>{% endfor %}
+  </tbody></table></div></div>
+{{ chart_months|json_script:"chart-months" }}{{ chart_totals|json_script:"chart-totals" }}
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'vendor/chartjs/chart.umd.js' %}"></script>
+<script src="{% static 'js/charts.js' %}"></script>
+<script>
+  FleetCharts.bar("monthlyChart", JSON.parse(document.getElementById("chart-months").textContent),
+                  JSON.parse(document.getElementById("chart-totals").textContent), {money: true});
+</script>
+{% endblock %}

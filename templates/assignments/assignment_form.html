@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+<form class="card" method="post" novalidate>{% csrf_token %}
+  <div class="card-header"><i class="bi bi-arrow-left-right"></i> {{ page_title }}</div>
+  {% include "partials/form_errors.html" %}
+  {% if form.vehicle %}
+  <div class="fm-form-section"><h6><i class="bi bi-link-45deg"></i> Véhicule et conducteur</h6><div class="row">
+    {% include "partials/field.html" with field=form.vehicle %}
+    {% include "partials/field.html" with field=form.driver %}
+    <div class="col-12"><div class="alert alert-light border small mb-3"><i class="bi bi-info-circle me-1"></i>
+      Seuls les véhicules <strong>disponibles</strong> et les conducteurs <strong>actifs, au permis valide et sans véhicule</strong> sont proposés.</div></div>
+  </div></div>
+  {% else %}
+  <div class="fm-form-section"><div class="d-flex flex-wrap gap-3 align-items-center">
+    <span class="plate">{{ object.vehicle.registration_number }}</span><span><i class="bi bi-arrow-right"></i></span><strong>{{ object.driver.full_name }}</strong>
+    <span class="text-muted small">depuis le {{ object.start_date|date:"d/m/Y" }}</span></div><div class="mb-3"></div></div>
+  {% endif %}
+  <div class="fm-form-section"><h6><i class="bi bi-calendar-range"></i> Période et kilométrage</h6><div class="row">
+    {% if form.start_date %}{% include "partials/field.html" with field=form.start_date col="col-md-4" %}{% endif %}
+    {% include "partials/field.html" with field=form.expected_end_date col="col-md-4" %}
+    {% if form.start_mileage %}{% include "partials/field.html" with field=form.start_mileage col="col-md-4" %}{% endif %}
+  </div></div>
+  <div class="fm-form-section"><h6><i class="bi bi-geo-alt"></i> Mission</h6><div class="row">
+    {% include "partials/field.html" with field=form.purpose %}
+    {% include "partials/field.html" with field=form.destination %}
+    {% include "partials/field.html" with field=form.notes col="col-12" %}
+  </div></div>
+  <div class="fm-form-actions">
+    <a href="{% if object %}{{ object.get_absolute_url }}{% else %}{% url 'assignments:list' %}{% endif %}" class="btn btn-light">Annuler</a>
+    <button class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>{% if object %}Enregistrer{% else %}Affecter le véhicule{% endif %}</button>
+  </div>
+</form>
+{% if form.vehicle_mileages %}{{ form.vehicle_mileages|json_script:"vehicle-mileages" }}{% endif %}
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load fleet_tags %}
+{% block content %}
+{% with d=object %}
+<div class="card mb-3"><div class="card-body"><div class="fm-hero">
+  <span class="fm-avatar fm-avatar-lg">{% if d.photo %}<img src="{{ d.photo.url }}" alt="">{% else %}{{ d.initials }}{% endif %}</span>
+  <div class="flex-grow-1">
+    <h4 class="mb-1">{{ d.full_name }} {% status_badge d.status d.get_status_display %}</h4>
+    <div class="text-muted"><i class="bi bi-telephone me-1"></i>{{ d.phone }}{% if d.email %} · <i class="bi bi-envelope me-1"></i>{{ d.email }}{% endif %}</div>
+    {% if d.user %}<div class="small text-muted mt-1"><i class="bi bi-person-lock me-1"></i>Compte utilisateur : {{ d.user.username }}</div>{% endif %}
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    {% if d.is_assignable and not d.current_assignment %}<a href="{% url 'assignments:create' %}?driver={{ d.pk }}" class="btn btn-primary"><i class="bi bi-arrow-left-right me-1"></i>Affecter un véhicule</a>{% endif %}
+    <a href="{% url 'drivers:update' d.pk %}" class="btn btn-light"><i class="bi bi-pencil me-1"></i>Modifier</a>
+    <button class="btn btn-light text-danger" data-confirm-url="{% url 'drivers:delete' d.pk %}" data-confirm-title="Supprimer {{ d.full_name }} ?" data-confirm-text="Un conducteur ayant un historique ne peut pas être supprimé : passez-le au statut « Inactif »."><i class="bi bi-trash"></i></button>
+  </div>
+</div></div></div>
+
+{% for a in alerts %}<div class="alert {% if a.priority >= 3 %}alert-danger{% else %}alert-warning{% endif %} d-flex gap-2"><i class="bi bi-exclamation-triangle-fill mt-1"></i><div><strong>{{ a.title }}</strong><br><span class="small">{{ a.description }}</span></div></div>{% endfor %}
+
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="card mb-3"><div class="card-header"><i class="bi bi-person-vcard"></i> Permis de conduire</div><div class="card-body">
+      <dl class="fm-dl">
+        <dt>Numéro</dt><dd>{{ d.license_number }}</dd>
+        <dt>Catégorie</dt><dd>{{ d.get_license_category_display }}</dd>
+        <dt>Délivré le</dt><dd>{{ d.license_issue_date|date:"d/m/Y" }}</dd>
+        <dt>Expire le</dt><dd>{{ d.license_expiry_date|date:"d/m/Y" }}
+          {% if d.license_is_expired %}<span class="badge badge-soft-danger">Expiré</span>{% elif d.license_days_remaining <= warning_days %}<span class="badge badge-soft-warning">dans {{ d.license_days_remaining }} j</span>{% else %}<span class="badge badge-soft-success">Valide</span>{% endif %}</dd>
+      </dl>
+    </div></div>
+    <div class="card"><div class="card-header"><i class="bi bi-person-lines-fill"></i> Informations</div><div class="card-body">
+      <dl class="fm-dl">
+        <dt>Sexe</dt><dd>{{ d.get_gender_display }}</dd>
+        <dt>Naissance</dt><dd>{{ d.birth_date|date:"d/m/Y" }}</dd>
+        <dt>Adresse</dt><dd>{{ d.address|default:"—" }}</dd>
+        <dt>Embauche</dt><dd>{{ d.hire_date|date:"d/m/Y" }}</dd>
+        <dt>Distance totale</dt><dd>{{ total_distance|km }}</dd>
+        <dt>Observations</dt><dd>{{ d.notes|default:"—"|linebreaksbr }}</dd>
+      </dl>
+    </div></div>
+  </div>
+  <div class="col-lg-8">
+    <div class="card"><div class="card-header"><i class="bi bi-clock-history"></i> Historique des affectations <span class="badge badge-soft-secondary ms-1">{{ assignments|length }}</span></div>
+      <div class="table-responsive"><table class="table table-hover">
+        <thead><tr><th>Véhicule</th><th>Début</th><th>Retour</th><th>Motif</th><th class="text-end">Distance</th><th>Statut</th></tr></thead><tbody>
+        {% for a in assignments %}<tr>
+          <td><a href="{{ a.vehicle.get_absolute_url }}" class="plate">{{ a.vehicle.registration_number }}</a></td>
+          <td>{{ a.start_date|date:"d/m/Y" }}</td>
+          <td>{% if a.actual_return_date %}{{ a.actual_return_date|date:"d/m/Y" }}{% else %}<span class="text-muted">prévu {{ a.expected_end_date|date:"d/m/Y" }}</span>{% endif %}</td>
+          <td><a href="{{ a.get_absolute_url }}">{{ a.purpose|truncatechars:40 }}</a></td>
+          <td class="text-end">{{ a.distance|km }}</td>
+          <td>{% status_badge a.status a.get_status_display %}</td></tr>
+        {% empty %}<tr><td colspan="6">{% include "partials/empty.html" with icon="arrow-left-right" title="Aucune affectation" text="Ce conducteur n'a encore reçu aucun véhicule." %}</td></tr>{% endfor %}
+        </tbody></table></div></div>
+  </div>
+</div>
+{% endwith %}
+{% endblock %}

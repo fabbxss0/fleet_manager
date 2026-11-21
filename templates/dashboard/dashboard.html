@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load static fleet_tags %}
+{% block content %}
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+  <div><h2 class="h5 mb-0">Bonjour {{ user.first_name|default:user.username }},</h2><span class="text-muted small">Situation du parc au {% now "d/m/Y à H:i" %}</span></div>
+  <div class="ms-auto d-flex gap-2">
+    <a href="{% url 'assignments:create' %}" class="btn btn-primary"><i class="bi bi-arrow-left-right me-1"></i>Affecter un véhicule</a>
+    <a href="{% url 'reports:detail' 'general' %}" class="btn btn-light"><i class="bi bi-file-earmark-bar-graph me-1"></i>Rapport général</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  {% url 'vehicles:list' as vurl %}
+  <div class="col-6 col-md-4 col-xl"><a href="{{ vurl }}" class="card kpi"><div class="kpi-icon tone-navy"><i class="bi bi-car-front"></i></div><div><div class="kpi-value">{{ kpis.total_vehicles }}</div><div class="kpi-label">Véhicules au total</div></div></a></div>
+  <div class="col-6 col-md-4 col-xl"><a href="{{ vurl }}?status=DISPONIBLE" class="card kpi"><div class="kpi-icon tone-green"><i class="bi bi-check-circle"></i></div><div><div class="kpi-value">{{ kpis.available }}</div><div class="kpi-label">Disponibles</div></div></a></div>
+  <div class="col-6 col-md-4 col-xl"><a href="{{ vurl }}?status=AFFECTE" class="card kpi"><div class="kpi-icon tone-blue"><i class="bi bi-person-check"></i></div><div><div class="kpi-value">{{ kpis.assigned }}</div><div class="kpi-label">Affectés</div></div></a></div>
+  <div class="col-6 col-md-4 col-xl"><a href="{{ vurl }}?status=EN_ENTRETIEN" class="card kpi"><div class="kpi-icon tone-amber"><i class="bi bi-tools"></i></div><div><div class="kpi-value">{{ kpis.in_maintenance }}</div><div class="kpi-label">En entretien</div></div></a></div>
+  <div class="col-12 col-md-4 col-xl"><a href="{{ vurl }}?status=IMMOBILISE" class="card kpi"><div class="kpi-icon tone-orange"><i class="bi bi-sign-stop"></i></div><div><div class="kpi-value">{{ kpis.immobilized }}</div><div class="kpi-label">Immobilisés</div></div></a></div>
+</div>
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-4 col-xl"><a href="{% url 'drivers:list' %}" class="card kpi"><div class="kpi-icon tone-sky"><i class="bi bi-person-badge"></i></div><div><div class="kpi-value">{{ kpis.drivers }}</div><div class="kpi-label">Conducteurs</div></div></a></div>
+  <div class="col-6 col-md-4 col-xl"><a href="{% url 'assignments:list' %}?status=EN_COURS" class="card kpi"><div class="kpi-icon tone-blue"><i class="bi bi-arrow-left-right"></i></div><div><div class="kpi-value">{{ kpis.active_assignments }}</div><div class="kpi-label">Affectations en cours</div></div></a></div>
+  <div class="col-6 col-md-4 col-xl"><a href="{% url 'insurance:list' %}?etat=expiree" class="card kpi"><div class="kpi-icon tone-red"><i class="bi bi-shield-x"></i></div><div><div class="kpi-value">{{ kpis.expired_insurances }}</div><div class="kpi-label">Assurances expirées</div></div></a></div>
+  <div class="col-6 col-md-4 col-xl"><a href="{% url 'maintenance:due' %}" class="card kpi"><div class="kpi-icon tone-amber"><i class="bi bi-calendar-check"></i></div><div><div class="kpi-value">{{ kpis.maintenance_due }}</div><div class="kpi-label">Entretiens à effectuer{% if kpis.maintenance_overdue %} · <span class="text-danger">{{ kpis.maintenance_overdue }} en retard</span>{% endif %}</div></div></a></div>
+  <div class="col-12 col-md-4 col-xl"><a href="{% url 'alerts:list' %}?lecture=non_lues" class="card kpi"><div class="kpi-icon tone-red"><i class="bi bi-bell"></i></div><div><div class="kpi-value">{{ kpis.unread_alerts }}</div><div class="kpi-label">Alertes non lues</div></div></a></div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-8"><div class="card h-100"><div class="card-header"><i class="bi bi-graph-up"></i> Évolution des dépenses d'entretien par mois
+    <span class="card-actions small text-muted fw-normal">Année {% now "Y" %} : <strong class="ms-1 text-dark">{{ kpis.year_expenses|fcfa }}</strong></span></div>
+    <div class="card-body"><div class="chart-box"><canvas id="chartMonthly"></canvas></div></div></div></div>
+  <div class="col-lg-4"><div class="card h-100"><div class="card-header"><i class="bi bi-pie-chart"></i> Véhicules par statut</div>
+    <div class="card-body"><div class="chart-box"><canvas id="chartStatus"></canvas></div></div></div></div>
+</div>
+<div class="row g-3 mb-3">
+  <div class="col-lg-4"><div class="card h-100"><div class="card-header"><i class="bi bi-diagram-3"></i> Véhicules par catégorie</div>
+    <div class="card-body"><div class="chart-box sm"><canvas id="chartCategory"></canvas></div></div></div></div>
+  <div class="col-lg-5"><div class="card h-100"><div class="card-header"><i class="bi bi-bar-chart"></i> Coût total des entretiens par véhicule</div>
+    <div class="card-body"><div class="chart-box sm"><canvas id="chartPerVehicle"></canvas></div></div></div></div>
+  <div class="col-lg-3"><div class="card h-100"><div class="card-header"><i class="bi bi-bell"></i> Alertes par priorité</div>
+    <div class="card-body"><div class="chart-box sm"><canvas id="chartAlerts"></canvas></div></div></div></div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-6"><div class="card h-100"><div class="card-header"><i class="bi bi-exclamation-octagon text-danger"></i> Alertes urgentes<a href="{% url 'alerts:list' %}" class="card-actions small fw-normal">Toutes les alertes</a></div>
+    {% for a in urgent_alerts %}<a href="{% url 'alerts:open' a.pk %}" class="alert-item text-reset {% if not a.is_read %}unread{% endif %}"><span class="alert-bar prio-{{ a.priority }}"></span><div class="small"><div class="alert-title">{{ a.title }}</div><div class="text-muted">{{ a.get_priority_display }} · {{ a.get_category_display }}</div></div></a>
+    {% empty %}{% include "partials/empty.html" with icon="check2-circle" title="Aucune alerte urgente" text="Rien de critique à signaler." %}{% endfor %}</div></div>
+  <div class="col-lg-6"><div class="card h-100"><div class="card-header"><i class="bi bi-calendar-event"></i> Prochaines échéances</div>
+    {% for d in deadlines %}<a href="{{ d.url }}" class="deadline"><i class="bi bi-{{ d.icon }} text-primary"></i><div class="small"><div class="fw-semibold">{{ d.label }}</div><div class="text-muted">{{ d.date|date:"d/m/Y" }}</div></div>
+      <span class="days-pill {% if d.days <= 7 %}tone-red{% elif d.days <= 30 %}tone-amber{% else %}tone-slate{% endif %}">{% if d.days == 0 %}Aujourd'hui{% else %}J-{{ d.days }}{% endif %}</span></a>
+    {% empty %}{% include "partials/empty.html" with icon="calendar-check" title="Aucune échéance proche" %}{% endfor %}</div></div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-6"><div class="card h-100"><div class="card-header"><i class="bi bi-arrow-left-right"></i> Dernières affectations<a href="{% url 'assignments:list' %}" class="card-actions small fw-normal">Voir tout</a></div>
+    <div class="table-responsive"><table class="table table-hover"><tbody>
+    {% for a in latest_assignments %}<tr><td><span class="plate">{{ a.vehicle.registration_number }}</span></td><td><a href="{{ a.get_absolute_url }}" class="cell-main">{{ a.driver.full_name }}</a><div class="cell-sub">{{ a.start_date|date:"d/m/Y" }} · {{ a.destination|default:a.purpose|truncatechars:28 }}</div></td><td class="text-end">{% status_badge a.status a.get_status_display %}</td></tr>
+    {% empty %}<tr><td class="text-center text-muted py-4">Aucune affectation.</td></tr>{% endfor %}</tbody></table></div></div></div>
+  <div class="col-lg-6"><div class="card h-100"><div class="card-header"><i class="bi bi-tools"></i> Derniers entretiens<a href="{% url 'maintenance:list' %}" class="card-actions small fw-normal">Voir tout</a></div>
+    <div class="table-responsive"><table class="table table-hover"><tbody>
+    {% for m in latest_maintenances %}<tr><td><span class="plate">{{ m.vehicle.registration_number }}</span></td><td><a href="{{ m.get_absolute_url }}" class="cell-main">{{ m.get_intervention_type_display }}</a><div class="cell-sub">{{ m.date|date:"d/m/Y" }} · {{ m.provider }}</div></td><td class="text-end tabular fw-semibold">{{ m.cost|fcfa }}</td></tr>
+    {% empty %}<tr><td class="text-center text-muted py-4">Aucun entretien.</td></tr>{% endfor %}</tbody></table></div></div></div>
+</div>
+{{ charts|json_script:"dashboard-data" }}
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'vendor/chartjs/chart.umd.js' %}"></script>
+<script src="{% static 'js/charts.js' %}"></script>
+<script>
+  const data = JSON.parse(document.getElementById("dashboard-data").textContent);
+  FleetCharts.bar("chartMonthly", data.monthly.labels, data.monthly.values, {money: true});
+  FleetCharts.doughnut("chartStatus", data.status.labels, data.status.values, data.status.keys.map((k) => FleetCharts.STATUS_COLORS[k]));
+  FleetCharts.doughnut("chartCategory", data.category.labels, data.category.values);
+  FleetCharts.bar("chartPerVehicle", data.per_vehicle.labels, data.per_vehicle.values, {money: true, horizontal: true, colors: "#0b1f3a"});
+  FleetCharts.doughnut("chartAlerts", data.alerts.labels, data.alerts.values, FleetCharts.PRIORITY_COLORS);
+</script>
+{% endblock %}

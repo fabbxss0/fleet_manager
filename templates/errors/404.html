@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card"><div class="empty-state py-5"><i class="bi bi-signpost-split"></i><h5>Page introuvable</h5>
+<p>L'élément demandé n'existe pas ou a été supprimé.</p>
+<a href="{% url 'dashboard:home' %}" class="btn btn-primary">Retour à l'accueil</a></div></div>
+{% endblock %}

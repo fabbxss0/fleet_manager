@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load fleet_tags %}
+{% block content %}
+<form class="card mb-3" method="get"><div class="card-body d-flex gap-2">
+  <input type="search" name="q" value="{{ query }}" class="form-control" placeholder="Immatriculation, nom, n° de permis, n° de police…" autofocus minlength="2">
+  <button class="btn btn-primary"><i class="bi bi-search"></i></button></div></form>
+{% if query|length < 2 %}
+  <div class="card">{% include "partials/empty.html" with icon="search" title="Saisissez au moins 2 caractères" text="La recherche porte sur les véhicules, conducteurs, affectations et assurances." %}</div>
+{% elif not total %}
+  <div class="card">{% include "partials/empty.html" with icon="search" title="Aucun résultat" text="Essayez avec un autre mot-clé." %}</div>
+{% else %}
+<p class="text-muted">{{ total }} résultat(s) pour « {{ query }} »</p>
+<div class="row g-3">
+  {% if results.vehicles %}<div class="col-lg-6"><div class="card"><div class="card-header"><i class="bi bi-car-front"></i> Véhicules</div><div class="list-group list-group-flush">
+    {% for v in results.vehicles %}<a href="{{ v.get_absolute_url }}" class="list-group-item list-group-item-action d-flex gap-2 align-items-center"><span class="plate">{{ v.registration_number }}</span>{{ v.brand }} {{ v.model }}<span class="ms-auto">{% status_badge v.status v.get_status_display %}</span></a>{% endfor %}</div></div></div>{% endif %}
+  {% if results.drivers %}<div class="col-lg-6"><div class="card"><div class="card-header"><i class="bi bi-person-badge"></i> Conducteurs</div><div class="list-group list-group-flush">
+    {% for d in results.drivers %}<a href="{{ d.get_absolute_url }}" class="list-group-item list-group-item-action d-flex gap-2 align-items-center"><span class="fm-avatar">{{ d.initials }}</span>{{ d.full_name }}<span class="ms-auto small text-muted">{{ d.license_number }}</span></a>{% endfor %}</div></div></div>{% endif %}
+  {% if results.assignments %}<div class="col-lg-6"><div class="card"><div class="card-header"><i class="bi bi-arrow-left-right"></i> Affectations</div><div class="list-group list-group-flush">
+    {% for a in results.assignments %}<a href="{{ a.get_absolute_url }}" class="list-group-item list-group-item-action">{{ a }}</a>{% endfor %}</div></div></div>{% endif %}
+  {% if results.insurances %}<div class="col-lg-6"><div class="card"><div class="card-header"><i class="bi bi-shield-check"></i> Assurances</div><div class="list-group list-group-flush">
+    {% for i in results.insurances %}<a href="{{ i.get_absolute_url }}" class="list-group-item list-group-item-action d-flex gap-2"><span class="plate">{{ i.vehicle.registration_number }}</span>{{ i.company }} — {{ i.policy_number }}</a>{% endfor %}</div></div></div>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

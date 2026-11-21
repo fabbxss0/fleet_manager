@@ -1,0 +1,6 @@
+Django>=5.2,<5.3
+Pillow>=10.0
+reportlab>=4.0
+openpyxl>=3.1
+# Pour PostgreSQL (optionnel) : décommenter la ligne suivante
+# psycopg[binary]>=3.1

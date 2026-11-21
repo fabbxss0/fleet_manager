@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<form class="card" method="post" enctype="multipart/form-data" novalidate>{% csrf_token %}
+  <div class="card-header"><i class="bi bi-tools"></i> {{ page_title }}</div>
+  {% include "partials/form_errors.html" %}
+  <div class="fm-form-section"><h6><i class="bi bi-wrench"></i> Intervention</h6><div class="row">
+    {% include "partials/field.html" with field=form.vehicle col="col-md-4" %}
+    {% include "partials/field.html" with field=form.intervention_type col="col-md-4" %}
+    {% include "partials/field.html" with field=form.status col="col-md-4" %}
+    {% include "partials/field.html" with field=form.date col="col-md-4" %}
+    {% include "partials/field.html" with field=form.mileage col="col-md-4" %}
+    {% include "partials/field.html" with field=form.provider col="col-md-4" %}
+    {% include "partials/field.html" with field=form.description col="col-md-8" %}
+    {% include "partials/field.html" with field=form.cost col="col-md-4" %}
+  </div>
+  <div class="alert alert-light border small"><i class="bi bi-info-circle me-1"></i>Un entretien <strong>« En cours »</strong> place automatiquement le véhicule au statut « En entretien » ; il redevient disponible lorsque l'entretien est terminé.</div>
+  </div>
+  <div class="fm-form-section"><h6><i class="bi bi-arrow-repeat"></i> Entretien périodique (prochaine échéance)</h6><div class="row">
+    {% include "partials/field.html" with field=form.next_date %}
+    {% include "partials/field.html" with field=form.next_mileage %}
+  </div></div>
+  <div class="fm-form-section"><h6><i class="bi bi-paperclip"></i> Justificatif</h6><div class="row">
+    {% include "partials/field.html" with field=form.invoice col="col-12" %}
+    <div class="col-12 form-text mb-3">PDF, JPG ou PNG — 5 Mo maximum.</div>
+  </div></div>
+  <div class="fm-form-actions">
+    <a href="{% if object %}{{ object.get_absolute_url }}{% else %}{% url 'maintenance:list' %}{% endif %}" class="btn btn-light">Annuler</a>
+    <button class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Enregistrer</button>
+  </div>
+</form>
+{% endblock %}

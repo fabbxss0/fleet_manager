@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card mb-3">
+  <form class="fm-toolbar border-0" method="get">
+    <a href="{% url 'reports:index' %}" class="btn btn-light btn-sm"><i class="bi bi-arrow-left"></i></a>
+    {% if report.has_period %}
+      <span class="fw-semibold small">Période du</span><input type="date" name="du" value="{{ du }}" class="form-control form-control-sm">
+      <span class="fw-semibold small">au</span><input type="date" name="au" value="{{ au }}" class="form-control form-control-sm">
+      <button class="btn btn-primary btn-sm"><i class="bi bi-funnel me-1"></i>Filtrer</button>
+      {% if du or au %}<a href="?" class="btn btn-link btn-sm">Effacer</a>{% endif %}
+    {% else %}<span class="small text-muted">Situation à la date du jour</span>{% endif %}
+    <div class="ms-auto d-flex gap-2">
+      <a href="?{% if query %}{{ query }}&{% endif %}format=pdf" class="btn btn-light btn-sm"><i class="bi bi-filetype-pdf text-danger me-1"></i>Exporter en PDF</a>
+      <a href="?{% if query %}{{ query }}&{% endif %}format=xlsx" class="btn btn-light btn-sm"><i class="bi bi-file-earmark-excel text-success me-1"></i>Exporter en Excel</a>
+      <button type="button" class="btn btn-light btn-sm" onclick="window.print()"><i class="bi bi-printer"></i></button>
+    </div>
+  </form>
+</div>
+<div class="card mb-3"><div class="card-body d-flex flex-wrap gap-3 align-items-center">
+  <div><h2 class="h5 mb-0">{{ report.title }}</h2><div class="small text-muted">{{ app_settings.organization_name }} ·
+    {% if report.date_from or report.date_to %}du {{ report.date_from|date:"d/m/Y"|default:"…" }} au {{ report.date_to|date:"d/m/Y"|default:"…" }}{% else %}toutes les données{% endif %}</div></div>
+  <div class="ms-auto small text-muted"><i class="bi bi-clock me-1"></i>Généré le {{ report.generated_at|date:"d/m/Y à H:i" }}</div>
+</div></div>
+{% for section in report.sections %}
+<div class="card mb-3"><div class="card-header">{{ section.title }}<span class="badge badge-soft-secondary ms-1">{{ section.rows|length }}</span></div>
+  <div class="table-responsive"><table class="table table-sm table-hover">
+    <thead><tr>{% for c in section.columns %}<th>{{ c }}</th>{% endfor %}</tr></thead>
+    <tbody>{% for row in section.display_rows %}<tr>{% for value, right in row %}<td class="{% if right %}text-end tabular{% endif %}">{{ value }}</td>{% endfor %}</tr>
+    {% empty %}<tr><td colspan="{{ section.columns|length }}" class="text-center text-muted py-4">Aucune donnée.</td></tr>{% endfor %}</tbody>
+    {% if section.display_total and section.rows %}<tfoot><tr class="table-light fw-bold">{% for value, right in section.display_total %}<td class="{% if right %}text-end tabular{% endif %}">{{ value }}</td>{% endfor %}</tr></tfoot>{% endif %}
+  </table></div></div>
+{% endfor %}
+{% endblock %}

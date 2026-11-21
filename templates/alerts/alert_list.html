@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row g-3 mb-3">
+  {% for value, label, n in priority_counts %}
+  <div class="col-6 col-lg-3"><a href="?priorite={{ value }}" class="card kpi">
+    <div class="kpi-icon {% if value == 4 %}tone-red{% elif value == 3 %}tone-orange{% elif value == 2 %}tone-amber{% else %}tone-sky{% endif %}"><i class="bi {% if value >= 3 %}bi-exclamation-octagon{% elif value == 2 %}bi-exclamation-triangle{% else %}bi-info-circle{% endif %}"></i></div>
+    <div><div class="kpi-value">{{ n }}</div><div class="kpi-label">{{ label }}</div></div></a></div>
+  {% endfor %}
+</div>
+<div class="card">
+  <form class="fm-toolbar js-autofilter" method="get">
+    <input type="search" name="q" value="{{ params.q }}" class="form-control fm-filter-search" placeholder="Rechercher une alerte…" data-autofocus>
+    <select name="priorite" class="form-select"><option value="">Toutes priorités</option>
+      {% for v, l in priorities %}<option value="{{ v }}" {% if params.priorite == v|stringformat:"s" %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+    <select name="categorie" class="form-select"><option value="">Toutes catégories</option>
+      {% for v, l in categories %}<option value="{{ v }}" {% if params.categorie == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+    <select name="lecture" class="form-select"><option value="">Lues et non lues</option>
+      <option value="non_lues" {% if params.lecture == 'non_lues' %}selected{% endif %}>Non lues</option>
+      <option value="lues" {% if params.lecture == 'lues' %}selected{% endif %}>Lues</option></select>
+    <select name="etat" class="form-select"><option value="">Alertes actives</option>
+      <option value="resolues" {% if params.etat == 'resolues' %}selected{% endif %}>Historique (résolues)</option></select>
+    <div class="ms-auto d-flex gap-2">
+      <button type="submit" form="refresh-form" class="btn btn-light btn-sm"><i class="bi bi-arrow-clockwise me-1"></i>Vérifier les échéances</button>
+      <button type="submit" form="read-all-form" class="btn btn-light btn-sm"><i class="bi bi-check2-all me-1"></i>Tout marquer comme lu</button>
+    </div>
+  </form>
+  {% for a in object_list %}
+    <div class="alert-item {% if not a.is_read %}unread{% endif %}">
+      <span class="alert-bar prio-{{ a.priority }}"></span>
+      <div class="kpi-icon tone-{% if a.priority == 4 %}red{% elif a.priority == 3 %}orange{% elif a.priority == 2 %}amber{% else %}sky{% endif %}" style="width:38px;height:38px;font-size:1rem"><i class="bi bi-{{ a.category_icon }}"></i></div>
+      <div class="flex-grow-1">
+        <a href="{% url 'alerts:open' a.pk %}" class="alert-title text-reset">{{ a.title }}</a>
+        <div class="small text-muted">{{ a.description }}</div>
+        <div class="small mt-1 d-flex flex-wrap gap-2">
+          <span class="badge badge-soft-{% if a.priority == 4 %}danger{% elif a.priority == 3 %}orange{% elif a.priority == 2 %}warning{% else %}info{% endif %}">{{ a.get_priority_display }}</span>
+          <span class="badge badge-soft-secondary">{{ a.get_category_display }}</span>
+          <span class="text-muted">Créée le {{ a.created_at|date:"d/m/Y à H:i" }}</span>
+          {% if a.is_resolved %}<span class="text-success"><i class="bi bi-check-circle"></i> Résolue le {{ a.resolved_at|date:"d/m/Y" }}</span>{% endif %}
+        </div>
+      </div>
+      <div class="d-flex gap-1">
+        <a href="{% url 'alerts:open' a.pk %}" class="btn btn-light btn-sm" title="Voir l'élément concerné"><i class="bi bi-box-arrow-up-right"></i></a>
+        <form method="post" action="{% url 'alerts:toggle_read' a.pk %}">{% csrf_token %}
+          <button class="btn btn-light btn-sm" title="{% if a.is_read %}Marquer comme non lue{% else %}Marquer comme lue{% endif %}"><i class="bi {% if a.is_read %}bi-envelope{% else %}bi-envelope-open{% endif %}"></i></button></form>
+      </div>
+    </div>
+  {% empty %}
+    {% include "partials/empty.html" with icon="bell-slash" title="Aucune alerte" text="Aucune alerte ne correspond à ces critères. Le parc est à jour." %}
+  {% endfor %}
+  {% include "partials/pagination.html" %}
+</div>
+<form id="refresh-form" method="post" action="{% url 'alerts:refresh' %}">{% csrf_token %}</form>
+<form id="read-all-form" method="post" action="{% url 'alerts:mark_all_read' %}">{% csrf_token %}</form>
+{% endblock %}

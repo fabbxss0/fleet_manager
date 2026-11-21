@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<form class="card" method="post" novalidate>{% csrf_token %}
+  <div class="card-header"><i class="bi bi-person-gear"></i> {{ page_title }}</div>
+  {% include "partials/form_errors.html" %}
+  <div class="fm-form-section"><h6><i class="bi bi-person"></i> Identité</h6><div class="row">
+    {% include "partials/field.html" with field=form.username %}
+    {% include "partials/field.html" with field=form.email %}
+    {% include "partials/field.html" with field=form.first_name %}
+    {% include "partials/field.html" with field=form.last_name %}
+    {% include "partials/field.html" with field=form.phone %}
+  </div></div>
+  <div class="fm-form-section"><h6><i class="bi bi-shield-lock"></i> Accès</h6><div class="row">
+    {% include "partials/field.html" with field=form.role %}
+    {% include "partials/field.html" with field=form.driver %}
+    {% if form.is_active %}{% include "partials/field.html" with field=form.is_active %}{% endif %}
+    {% if form.password1 %}
+      {% include "partials/field.html" with field=form.password1 %}
+      {% include "partials/field.html" with field=form.password2 %}
+    {% endif %}
+  </div>
+  <div class="alert alert-light border small"><strong>Rôles :</strong> l'<em>Administrateur</em> a un accès complet ; le <em>Gestionnaire</em> gère le parc, les alertes et les rapports ; le <em>Conducteur</em> consulte uniquement son profil, son véhicule et son historique.</div>
+  </div>
+  <div class="fm-form-actions"><a href="{% url 'accounts:user_list' %}" class="btn btn-light">Annuler</a><button class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Enregistrer</button></div>
+</form>
+{% endblock %}

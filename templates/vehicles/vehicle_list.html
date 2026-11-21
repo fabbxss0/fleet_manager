@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load fleet_tags %}
+{% block content %}
+<div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+  <div class="fm-chips">
+    <a href="?" class="fm-chip {% if not current_filters.status %}active{% endif %}">Tous<span class="n">{{ status_counts.total }}</span></a>
+    {% for value, label in statuses %}
+      <a href="?status={{ value }}" class="fm-chip {% if current_filters.status == value %}active{% endif %}">{{ label }}<span class="n">{{ status_counts|get_item:value }}</span></a>
+    {% endfor %}
+  </div>
+  <a href="{% url 'vehicles:create' %}" class="btn btn-primary ms-auto"><i class="bi bi-plus-lg me-1"></i>Ajouter un véhicule</a>
+</div>
+<div class="card">
+  <form class="fm-toolbar js-autofilter" method="get">
+    <input type="search" name="q" value="{{ q }}" class="form-control fm-filter-search" placeholder="Immatriculation, marque, modèle…" aria-label="Rechercher" data-autofocus>
+    <select name="category" class="form-select" aria-label="Catégorie"><option value="">Toutes catégories</option>
+      {% for v, l in categories %}<option value="{{ v }}" {% if current_filters.category == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+    <select name="status" class="form-select" aria-label="Statut"><option value="">Tous statuts</option>
+      {% for v, l in statuses %}<option value="{{ v }}" {% if current_filters.status == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+    <select name="fuel_type" class="form-select" aria-label="Carburant"><option value="">Tous carburants</option>
+      {% for v, l in fuels %}<option value="{{ v }}" {% if current_filters.fuel_type == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+    {% if q or current_filters.category or current_filters.status or current_filters.fuel_type %}<a href="?" class="btn btn-link btn-sm">Réinitialiser</a>{% endif %}
+  </form>
+  <div class="table-responsive"><table class="table table-hover">
+    <thead><tr><th>Immatriculation</th><th>Véhicule</th><th>Catégorie</th><th>Carburant</th><th class="text-end">Kilométrage</th><th>Statut</th><th></th></tr></thead>
+    <tbody>
+    {% for v in object_list %}
+      <tr>
+        <td><a href="{{ v.get_absolute_url }}" class="plate">{{ v.registration_number }}</a></td>
+        <td><div class="cell-main">{{ v.brand }} {{ v.model }}</div><div class="cell-sub">{{ v.year }} · {{ v.color|default:"—" }}</div></td>
+        <td>{{ v.get_category_display }}</td>
+        <td>{{ v.get_fuel_type_display }}</td>
+        <td class="text-end tabular">{{ v.mileage|km }}</td>
+        <td>{% status_badge v.status v.get_status_display %}</td>
+        <td class="row-actions">
+          <a class="btn btn-light btn-sm" href="{{ v.get_absolute_url }}" title="Consulter"><i class="bi bi-eye"></i></a>
+          <a class="btn btn-light btn-sm" href="{% url 'vehicles:update' v.pk %}" title="Modifier"><i class="bi bi-pencil"></i></a>
+          <button class="btn btn-light btn-sm text-danger" title="Supprimer" data-confirm-url="{% url 'vehicles:delete' v.pk %}" data-confirm-title="Supprimer le véhicule {{ v.registration_number }} ?" data-confirm-text="Cette action est définitive. Un véhicule ayant un historique ne peut pas être supprimé."><i class="bi bi-trash"></i></button>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="7">{% url 'vehicles:create' as create_url %}{% include "partials/empty.html" with icon="car-front" title="Aucun véhicule trouvé" action_url=create_url action_label="Ajouter un véhicule" %}</td></tr>
+    {% endfor %}
+    </tbody></table></div>
+  {% include "partials/pagination.html" %}
+</div>
+{% endblock %}

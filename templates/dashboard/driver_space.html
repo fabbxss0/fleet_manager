@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load fleet_tags %}
+{% block content %}
+{% if not driver %}
+<div class="card">{% include "partials/empty.html" with icon="person-x" title="Aucune fiche conducteur" text="Votre compte n'est rattaché à aucune fiche conducteur. Contactez l'administrateur." %}</div>
+{% else %}
+<div class="card mb-3"><div class="card-body fm-hero">
+  <span class="fm-avatar fm-avatar-lg">{% if driver.photo %}<img src="{{ driver.photo.url }}" alt="">{% else %}{{ driver.initials }}{% endif %}</span>
+  <div class="flex-grow-1"><h4 class="mb-1">{{ driver.full_name }} {% status_badge driver.status driver.get_status_display %}</h4>
+    <div class="text-muted">Permis n° {{ driver.license_number }} (cat. {{ driver.license_category }}) · expire le {{ driver.license_expiry_date|date:"d/m/Y" }}
+      {% if driver.license_is_expired %}<span class="badge badge-soft-danger">Expiré</span>{% elif driver.license_days_remaining <= app_settings.alert_days_warning %}<span class="badge badge-soft-warning">dans {{ driver.license_days_remaining }} j</span>{% endif %}</div></div>
+</div></div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-7"><div class="card h-100"><div class="card-header"><i class="bi bi-car-front"></i> Mon véhicule affecté</div><div class="card-body">
+    {% if vehicle %}
+      <div class="fm-hero mb-3"><div class="fm-hero-photo">{% if vehicle.photo %}<img src="{{ vehicle.photo.url }}" alt="">{% else %}<i class="bi bi-car-front"></i>{% endif %}</div>
+        <div><span class="plate fs-6">{{ vehicle.registration_number }}</span><h5 class="mt-2 mb-0">{{ vehicle.brand }} {{ vehicle.model }}</h5><div class="text-muted">{{ vehicle.get_category_display }} · {{ vehicle.get_fuel_type_display }} · {{ vehicle.color }}</div></div></div>
+      <dl class="fm-dl">
+        <dt>Affecté depuis</dt><dd>{{ current.start_date|date:"d/m/Y" }}</dd>
+        <dt>Retour prévu</dt><dd>{{ current.expected_end_date|date:"d/m/Y" }}{% if current.is_overdue %} <span class="badge badge-soft-danger">En retard</span>{% endif %}</dd>
+        <dt>Mission</dt><dd>{{ current.purpose }}{% if current.destination %} — {{ current.destination }}{% endif %}</dd>
+        <dt>Kilométrage</dt><dd>{{ vehicle.mileage|km }}</dd>
+        <dt>Réservoir</dt><dd>{% if vehicle.tank_capacity %}{{ vehicle.tank_capacity }} L{% else %}—{% endif %}</dd>
+      </dl>
+    {% else %}{% include "partials/empty.html" with icon="car-front" title="Aucun véhicule affecté" text="Aucun véhicule ne vous est actuellement confié." %}{% endif %}
+  </div></div></div>
+  <div class="col-lg-5"><div class="card h-100"><div class="card-header"><i class="bi bi-info-circle"></i> Informations du véhicule</div><div class="card-body">
+    {% if vehicle %}
+      <h6 class="small text-uppercase text-muted">Assurance</h6>
+      {% if insurance %}<p>{{ insurance.company }} — police {{ insurance.policy_number }}<br><span class="small text-muted">Valide jusqu'au {{ insurance.end_date|date:"d/m/Y" }}</span> {% status_badge insurance.state insurance.state_label %}</p>
+      {% else %}<p class="text-danger fw-semibold"><i class="bi bi-exclamation-triangle me-1"></i>Aucune assurance valide : signalez-le au gestionnaire.</p>{% endif %}
+      <h6 class="small text-uppercase text-muted">Prochain entretien</h6>
+      {% if next_maintenance %}<p>{{ next_maintenance.get_intervention_type_display }} : {{ next_maintenance.next_date|date:"d/m/Y" }}{% if next_maintenance.next_mileage %} ou {{ next_maintenance.next_mileage|km }}{% endif %}</p>{% else %}<p class="text-muted">Non planifié.</p>{% endif %}
+      <h6 class="small text-uppercase text-muted">Derniers entretiens</h6>
+      <ul class="list-unstyled small mb-0">{% for m in last_maintenances %}<li class="mb-1"><i class="bi bi-tools me-1 text-muted"></i>{{ m.date|date:"d/m/Y" }} — {{ m.get_intervention_type_display }}</li>{% empty %}<li class="text-muted">Aucun.</li>{% endfor %}</ul>
+    {% else %}<p class="text-muted mb-0">—</p>{% endif %}
+  </div></div></div>
+</div>
+
+<div class="card"><div class="card-header"><i class="bi bi-clock-history"></i> Mon historique d'affectations</div>
+  <div class="table-responsive"><table class="table"><thead><tr><th>Véhicule</th><th>Début</th><th>Retour</th><th>Motif</th><th class="text-end">Distance</th><th>Statut</th></tr></thead><tbody>
+  {% for a in history %}<tr><td><span class="plate">{{ a.vehicle.registration_number }}</span></td><td>{{ a.start_date|date:"d/m/Y" }}</td><td>{{ a.actual_return_date|date:"d/m/Y"|default:"—" }}</td><td>{{ a.purpose }}</td><td class="text-end">{{ a.distance|km }}</td><td>{% status_badge a.status a.get_status_display %}</td></tr>
+  {% empty %}<tr><td colspan="6" class="text-center text-muted py-4">Aucune affectation.</td></tr>{% endfor %}</tbody></table></div></div>
+{% endif %}
+{% endblock %}

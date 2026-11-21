@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<form class="card" method="post" enctype="multipart/form-data" novalidate>{% csrf_token %}
+  <div class="card-header"><i class="bi bi-car-front"></i> {{ page_title }}{% if object %} — <span class="plate ms-1">{{ object.registration_number }}</span>{% endif %}</div>
+  {% include "partials/form_errors.html" %}
+  <div class="fm-form-section"><h6><i class="bi bi-card-text"></i> Identification</h6><div class="row">
+    {% include "partials/field.html" with field=form.registration_number col="col-md-4" %}
+    {% include "partials/field.html" with field=form.brand col="col-md-4" %}
+    {% include "partials/field.html" with field=form.model col="col-md-4" %}
+    {% include "partials/field.html" with field=form.category col="col-md-4" %}
+    {% include "partials/field.html" with field=form.fuel_type col="col-md-4" %}
+    {% include "partials/field.html" with field=form.color col="col-md-4" %}
+    {% include "partials/field.html" with field=form.year col="col-md-4" %}
+    {% include "partials/field.html" with field=form.chassis_number col="col-md-8" %}
+  </div></div>
+  <div class="fm-form-section"><h6><i class="bi bi-gear"></i> Caractéristiques et acquisition</h6><div class="row">
+    {% include "partials/field.html" with field=form.acquisition_date col="col-md-4" %}
+    {% include "partials/field.html" with field=form.acquisition_price col="col-md-4" %}
+    {% include "partials/field.html" with field=form.mileage col="col-md-4" %}
+    {% include "partials/field.html" with field=form.tank_capacity col="col-md-4" %}
+    {% include "partials/field.html" with field=form.fiscal_power col="col-md-4" %}
+    {% include "partials/field.html" with field=form.status col="col-md-4" %}
+  </div></div>
+  <div class="fm-form-section"><h6><i class="bi bi-image"></i> Photo et observations</h6><div class="row">
+    {% include "partials/field.html" with field=form.photo col="col-md-6" %}
+    {% include "partials/field.html" with field=form.notes col="col-md-6" %}
+  </div></div>
+  <div class="fm-form-actions">
+    <a href="{% if object %}{{ object.get_absolute_url }}{% else %}{% url 'vehicles:list' %}{% endif %}" class="btn btn-light">Annuler</a>
+    <button class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Enregistrer</button>
+  </div>
+</form>
+{% endblock %}
