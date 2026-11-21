@@ -56,6 +56,19 @@
         <dt>Observations</dt><dd>{{ v.notes|default:"—"|linebreaksbr }}</dd>
       </dl>
     </div></div>
+    <div class="card mb-3"><div class="card-header"><i class="bi bi-calculator"></i> Coût de revient
+      {% if costs.to_review %}<span class="badge badge-soft-danger card-actions">À étudier</span>{% endif %}</div><div class="card-body">
+      <dl class="fm-dl">
+        <dt>Entretiens</dt><dd class="tabular">{{ costs.maintenance|fcfa }}</dd>
+        <dt>Carburant</dt><dd class="tabular">{{ costs.fuel|fcfa }}</dd>
+        <dt>Assurances</dt><dd class="tabular">{{ costs.insurance|fcfa }}</dd>
+        <dt>Sinistres</dt><dd class="tabular">{{ costs.claims|fcfa }}</dd>
+        <dt class="fw-semibold text-dark">Exploitation</dt><dd class="fw-bold tabular">{{ costs.operating|fcfa }}</dd>
+        <dt>Par an</dt><dd class="tabular">{% if costs.annual_operating %}{{ costs.annual_operating|fcfa }}{% else %}—{% endif %}</dd>
+        <dt>Au kilomètre</dt><dd class="tabular">{% if costs.per_km %}{{ costs.per_km|fcfa }}/km{% else %}—{% endif %}</dd>
+        <dt>Coût total</dt><dd class="tabular">{{ costs.total|fcfa }} <span class="small text-muted">(achat inclus)</span></dd>
+      </dl>
+    </div></div>
     <div class="card mb-3"><div class="card-header"><i class="bi bi-person-check"></i> Affectation actuelle</div><div class="card-body">
       {% with cur=v.current_assignment %}{% if cur %}
         <a href="{{ cur.driver.get_absolute_url }}" class="fw-semibold">{{ cur.driver.full_name }}</a>

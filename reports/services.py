@@ -187,6 +187,22 @@ def report_claims(date_from, date_to):
     return [detail, types]
 
 
+def report_costs(date_from, date_to):
+    from vehicles.costs import fleet_costs, fleet_totals
+
+    rows = fleet_costs()
+    t = fleet_totals(rows)
+    data = [[r["vehicle"].registration_number, f"{r['vehicle'].brand} {r['vehicle'].model}", r["acquisition"],
+             r["maintenance"], r["fuel"], r["insurance"], r["claims"], r["operating"], r["km"],
+             r["per_km"] if r["per_km"] is not None else "—", "À étudier" if r["to_review"] else "—"] for r in rows]
+    return [Section("Coût de revient par véhicule (depuis l'acquisition)",
+                    ["Immatriculation", "Véhicule", "Achat", "Entretien", "Carburant", "Assurance", "Sinistres",
+                     "Exploitation", "Km parcourus", "Coût / km", "Avis"], data,
+                    ["Total", f"{len(rows)} véhicule(s)", t["acquisition"], t["maintenance"], t["fuel"], t["insurance"],
+                     t["claims"], t["operating"], t["km"], t["per_km"] or "—", ""],
+                    money_columns=(2, 3, 4, 5, 6, 7, 9), number_columns=(8,))]
+
+
 def report_general(date_from, date_to):
     from dashboard.services import get_kpis
 
@@ -232,6 +248,7 @@ REPORTS = {
     "assurances": ("Situation des assurances", "Polices et échéances (période = date d'expiration).", "shield-check", report_insurances, True),
     "carburant": ("Carburant et consommation", "Pleins, litres, dépenses et L/100 km (période = date du plein).", "fuel-pump", report_fuel, True),
     "sinistres": ("Sinistres et accidents", "Sinistres, indemnités et reste à charge (période = date du sinistre).", "exclamation-diamond", report_claims, True),
+    "couts": ("Coût de revient des véhicules", "Achat, entretien, carburant, assurance, sinistres et coût au km.", "calculator", report_costs, False),
     "depenses": ("Dépenses d'entretien", "Coûts par véhicule et par type d'intervention.", "cash-coin", report_expenses, True),
 }
 

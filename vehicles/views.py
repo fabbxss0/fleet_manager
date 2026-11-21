@@ -1,10 +1,12 @@
 from django.db.models import Count, Q
+from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
-from core.permissions import StaffRequiredMixin
+from core.permissions import StaffRequiredMixin, staff_required
 from core.views_mixins import FilteredListMixin, FormMessagesMixin, PageTitleMixin, SafeDeleteView
 
+from . import costs
 from .forms import VehicleForm
 from .models import Vehicle
 
@@ -28,6 +30,25 @@ class VehicleListView(StaffRequiredMixin, PageTitleMixin, FilteredListMixin, Lis
         return context
 
 
+@staff_required
+def vehicle_costs_view(request):
+    """Coût de revient de chaque véhicule du parc."""
+    show_all = request.GET.get("tous") == "1"
+    rows = costs.fleet_costs(include_out_of_service=show_all)
+    return render(request, "vehicles/vehicle_costs.html", {
+        "page_title": "Coût de revient des véhicules", "rows": rows, "totals": costs.fleet_totals(rows),
+        "show_all": show_all, "review_ratio": int(costs.REVIEW_RATIO * 100),
+        "chart": {
+            "labels": [r["vehicle"].registration_number for r in rows[:10]],
+            "series": [
+                {"label": label, "values": [float(r[key]) for r in rows[:10]], "color": color}
+                for key, label, color in (("maintenance", "Entretien", "#2563eb"), ("fuel", "Carburant", "#0284c7"),
+                                          ("insurance", "Assurance", "#16a34a"), ("claims", "Sinistres", "#ea580c"))
+            ],
+        },
+    })
+
+
 class VehicleDetailView(StaffRequiredMixin, PageTitleMixin, DetailView):
     model = Vehicle
     template_name = "vehicles/vehicle_detail.html"
@@ -44,6 +65,7 @@ class VehicleDetailView(StaffRequiredMixin, PageTitleMixin, DetailView):
 
         context["fuel"] = vehicle_fuel_summary(vehicle)
         context["claims"] = vehicle.claims.select_related("driver")
+        context["costs"] = costs.vehicle_costs(vehicle)
         context["has_history"] = (
             vehicle.assignments.exists() or vehicle.maintenances.exists() or vehicle.insurances.exists()
             or vehicle.fuel_entries.exists() or vehicle.claims.exists()

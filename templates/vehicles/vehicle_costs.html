@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load static fleet_tags %}
+{% block content %}
+<div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+  <p class="text-muted mb-0">Depuis l'acquisition de chaque véhicule. Exploitation = entretiens + carburant + assurances + sinistres (reste à charge).</p>
+  <div class="ms-auto d-flex gap-2">
+    <a href="?{% if not show_all %}tous=1{% endif %}" class="btn btn-light btn-sm">{% if show_all %}Masquer{% else %}Inclure{% endif %} les véhicules hors service</a>
+    <a href="{% url 'reports:detail' 'couts' %}?format=xlsx" class="btn btn-light btn-sm"><i class="bi bi-file-earmark-excel text-success me-1"></i>Excel</a>
+  </div>
+</div>
+<div class="row g-3 mb-3">
+  <div class="col-6 col-lg-3"><div class="card kpi"><div class="kpi-icon tone-navy"><i class="bi bi-bag"></i></div><div><div class="kpi-value fs-5">{{ totals.acquisition|fcfa }}</div><div class="kpi-label">Valeur d'achat</div></div></div></div>
+  <div class="col-6 col-lg-3"><div class="card kpi"><div class="kpi-icon tone-red"><i class="bi bi-cash-stack"></i></div><div><div class="kpi-value fs-5">{{ totals.operating|fcfa }}</div><div class="kpi-label">Coût d'exploitation</div></div></div></div>
+  <div class="col-6 col-lg-3"><div class="card kpi"><div class="kpi-icon tone-blue"><i class="bi bi-signpost-2"></i></div><div><div class="kpi-value">{{ totals.km|thousands }}</div><div class="kpi-label">Km parcourus</div></div></div></div>
+  <div class="col-6 col-lg-3"><div class="card kpi"><div class="kpi-icon tone-amber"><i class="bi bi-speedometer2"></i></div><div><div class="kpi-value fs-5">{% if totals.per_km %}{{ totals.per_km|fcfa }}{% else %}—{% endif %}</div><div class="kpi-label">Coût moyen au km</div></div></div></div>
+</div>
+<div class="card mb-3"><div class="card-header"><i class="bi bi-bar-chart-steps"></i> Décomposition du coût d'exploitation (10 véhicules les plus coûteux)</div>
+  <div class="card-body"><div class="chart-box" style="height:360px"><canvas id="costChart"></canvas></div></div></div>
+<div class="card"><div class="table-responsive"><table class="table table-hover">
+  <thead><tr><th>Véhicule</th><th class="text-end">Achat</th><th class="text-end">Entretien</th><th class="text-end">Carburant</th><th class="text-end">Assurance</th><th class="text-end">Sinistres</th><th class="text-end">Exploitation</th><th class="text-end">Par an</th><th class="text-end">Au km</th><th></th></tr></thead>
+  <tbody>
+  {% for r in rows %}<tr>
+    <td><a href="{{ r.vehicle.get_absolute_url }}" class="plate">{{ r.vehicle.registration_number }}</a><div class="cell-sub">{{ r.vehicle.brand }} {{ r.vehicle.model }} · {{ r.years }} an(s) · {{ r.km|km }}</div></td>
+    <td class="text-end tabular">{{ r.acquisition|fcfa }}</td><td class="text-end tabular">{{ r.maintenance|fcfa }}</td>
+    <td class="text-end tabular">{{ r.fuel|fcfa }}</td><td class="text-end tabular">{{ r.insurance|fcfa }}</td><td class="text-end tabular">{{ r.claims|fcfa }}</td>
+    <td class="text-end tabular fw-bold">{{ r.operating|fcfa }}</td>
+    <td class="text-end tabular">{% if r.annual_operating %}{{ r.annual_operating|fcfa }}{% else %}—{% endif %}</td>
+    <td class="text-end tabular">{% if r.per_km %}{{ r.per_km|fcfa }}{% else %}—{% endif %}</td>
+    <td>{% if r.to_review %}<span class="badge badge-soft-danger" title="Coût d'exploitation annuel supérieur à {{ review_ratio }} % du prix d'achat">À étudier</span>{% endif %}</td></tr>
+  {% empty %}<tr><td colspan="10">{% include "partials/empty.html" with icon="calculator" title="Aucun véhicule" %}</td></tr>{% endfor %}
+  </tbody></table></div>
+  <div class="fm-card-footer"><span><i class="bi bi-info-circle me-1"></i>« À étudier » : le coût d'exploitation annuel dépasse {{ review_ratio }} % du prix d'achat ; un remplacement peut être plus rentable.</span></div></div>
+{{ chart|json_script:"cost-data" }}
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'vendor/chartjs/chart.umd.js' %}"></script>
+<script src="{% static 'js/charts.js' %}"></script>
+<script>const c = JSON.parse(document.getElementById("cost-data").textContent); FleetCharts.stackedBar("costChart", c.labels, c.series);</script>
+{% endblock %}

@@ -47,6 +47,20 @@
         },
       });
     },
+    stackedBar(id, labels, datasets) {
+      // Barres horizontales empilées : décomposition d'un total (ex. coûts par poste)
+      const canvas = document.getElementById(id);
+      if (!canvas || empty(canvas, labels, datasets.flatMap((d) => d.values))) return;
+      new Chart(canvas, {
+        type: "bar",
+        data: {labels, datasets: datasets.map((d) => ({label: d.label, data: d.values, backgroundColor: d.color, maxBarThickness: 26}))},
+        options: {
+          maintainAspectRatio: false, indexAxis: "y",
+          plugins: {legend: {position: "top", align: "end"}, tooltip: {callbacks: {label: (c) => `${c.dataset.label} : ${fcfa(c.parsed.x)}`}}},
+          scales: {x: {stacked: true, beginAtZero: true, grid: {color: "#eef2f6"}, ticks: {callback: (v) => compact(v)}}, y: {stacked: true, grid: {display: false}}},
+        },
+      });
+    },
     groupedBar(id, labels, datasets) {
       // datasets : [{label, values, color}] — ex. entretien et carburant par mois
       const canvas = document.getElementById(id);

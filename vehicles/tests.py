@@ -95,3 +95,41 @@ class VehicleExtraInfoTests(TestCase):
         generate_alerts()
         alert.refresh_from_db()
         self.assertTrue(alert.is_resolved)
+
+
+class VehicleCostTests(TestCase):
+    def test_cost_breakdown_and_per_km(self):
+        from datetime import timedelta
+        from decimal import Decimal
+
+        from claims.models import Claim
+        from fuel.models import FuelEntry
+        from maintenance.models import Maintenance
+        from vehicles.costs import vehicle_costs
+
+        vehicle = make_vehicle(insured=True, mileage=20000, acquisition_mileage=10000,
+                               acquisition_date=today() - timedelta(days=730), acquisition_price=Decimal("10000000"))
+        Maintenance.objects.create(vehicle=vehicle, intervention_type="VIDANGE", description="x", date=today(),
+                                   mileage=20000, provider="G", cost=Decimal("400000"))
+        Maintenance.objects.create(vehicle=vehicle, intervention_type="FREINAGE", description="x", date=today(),
+                                   mileage=20000, provider="G", cost=Decimal("999999"), status="ANNULE")
+        FuelEntry.objects.create(vehicle=vehicle, date=today(), mileage=20000, liters=Decimal("100"),
+                                 unit_price=Decimal("700"))
+        Claim.objects.create(vehicle=vehicle, claim_type="ACCIDENT", date=today(), location="x", description="x",
+                             repair_cost=Decimal("300000"), insurance_status="INDEMNISE", indemnity_amount=Decimal("200000"))
+        c = vehicle_costs(vehicle)
+        self.assertEqual(c["maintenance"], Decimal("400000"))   # entretien annulé exclu
+        self.assertEqual(c["fuel"], Decimal("70000"))
+        self.assertEqual(c["insurance"], Decimal("150000"))     # prime de make_vehicle(insured=True)
+        self.assertEqual(c["claims"], Decimal("100000"))        # reste à charge
+        self.assertEqual(c["operating"], Decimal("720000"))
+        self.assertEqual(c["per_km"], Decimal("72"))            # 720 000 / 10 000 km
+        self.assertFalse(c["to_review"])
+
+    def test_costs_page(self):
+        from accounts.models import User
+        from core.testing import make_user
+
+        make_vehicle()
+        self.client.force_login(make_user(User.Role.MANAGER))
+        self.assertEqual(self.client.get(reverse("vehicles:costs")).status_code, 200)
