@@ -1,6 +1,4 @@
 """Logique métier des entretiens : statut du véhicule, échéances, dépenses."""
-from datetime import timedelta
-
 from django.db import transaction
 from django.db.models import Count, Sum
 from django.db.models.functions import TruncMonth
@@ -108,23 +106,25 @@ def cost_by_vehicle(queryset=None):
     )
 
 
+def month_range(months=12):
+    """Premiers jours des `months` derniers mois, du plus ancien au mois courant."""
+    today = timezone.localdate()
+    result = []
+    for offset in range(months - 1, -1, -1):
+        year, month = divmod(today.year * 12 + today.month - 1 - offset, 12)
+        result.append(today.replace(year=year, month=month + 1, day=1))
+    return result
+
+
 def cost_by_month(months=12):
     """Dépenses d'entretien des `months` derniers mois (mois sans dépense inclus)."""
-    today = timezone.localdate()
-    # Premier jour du mois situé (months - 1) mois avant le mois courant
-    year, month = divmod(today.year * 12 + today.month - 1 - (months - 1), 12)
-    first_month = today.replace(year=year, month=month + 1, day=1)
+    month_list = month_range(months)
     rows = (
         Maintenance.objects.exclude(status=Maintenance.Status.CANCELLED)
-        .filter(date__gte=first_month, date__lte=today)
+        .filter(date__gte=month_list[0], date__lte=timezone.localdate())
         .annotate(month=TruncMonth("date"))
         .values("month")
         .annotate(total=Sum("cost"))
     )
     totals = {row["month"].strftime("%Y-%m"): float(row["total"] or 0) for row in rows}
-    result, cursor = [], first_month
-    for _ in range(months):
-        key = cursor.strftime("%Y-%m")
-        result.append((cursor, totals.get(key, 0.0)))
-        cursor = (cursor + timedelta(days=32)).replace(day=1)
-    return result
+    return [(m, totals.get(m.strftime("%Y-%m"), 0.0)) for m in month_list]

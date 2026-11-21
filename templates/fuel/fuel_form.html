@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+<form class="card {% if driver_vehicle %}mx-auto{% endif %}" {% if driver_vehicle %}style="max-width:820px"{% endif %} method="post" enctype="multipart/form-data" novalidate>{% csrf_token %}
+  <div class="card-header"><i class="bi bi-fuel-pump"></i> {{ page_title }}{% if driver_vehicle %} <span class="plate ms-2">{{ driver_vehicle.registration_number }}</span>{% endif %}</div>
+  {% include "partials/form_errors.html" %}
+  {% if form.vehicle %}
+  <div class="fm-form-section"><h6><i class="bi bi-car-front"></i> Véhicule</h6><div class="row">
+    {% include "partials/field.html" with field=form.vehicle %}
+    {% include "partials/field.html" with field=form.driver %}
+  </div></div>
+  {% endif %}
+  <div class="fm-form-section"><h6><i class="bi bi-droplet"></i> Plein</h6><div class="row">
+    {% include "partials/field.html" with field=form.date col="col-md-4" %}
+    {% include "partials/field.html" with field=form.mileage col="col-md-4" %}
+    {% include "partials/field.html" with field=form.station col="col-md-4" %}
+    {% include "partials/field.html" with field=form.liters col="col-md-4" %}
+    {% include "partials/field.html" with field=form.unit_price col="col-md-4" %}
+    <div class="col-md-4 mb-3"><label class="form-label">Montant total</label><div class="form-control bg-light fw-semibold" id="fuel-total">—</div></div>
+    {% include "partials/field.html" with field=form.full_tank col="col-12" %}
+  </div></div>
+  <div class="fm-form-section"><h6><i class="bi bi-paperclip"></i> Reçu et observations</h6><div class="row">
+    {% include "partials/field.html" with field=form.receipt %}
+    {% include "partials/field.html" with field=form.notes %}
+  </div></div>
+  <div class="fm-form-actions">
+    <a href="{% if driver_vehicle %}{% url 'dashboard:driver_space' %}{% else %}{% url 'fuel:list' %}{% endif %}" class="btn btn-light">Annuler</a>
+    <button class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Enregistrer</button>
+  </div>
+</form>
+{% endblock %}
+{% block extra_js %}
+<script>
+  // Aperçu du montant (le montant réel est recalculé par le serveur)
+  (() => {
+    const l = document.getElementById("id_liters"), p = document.getElementById("id_unit_price"), out = document.getElementById("fuel-total");
+    const update = () => {
+      const total = Math.round((parseFloat(l.value) || 0) * (parseFloat(p.value) || 0));
+      out.textContent = total ? new Intl.NumberFormat("fr-FR").format(total) + " FCFA" : "—";
+    };
+    l.addEventListener("input", update); p.addEventListener("input", update); update();
+  })();
+</script>
+{% endblock %}

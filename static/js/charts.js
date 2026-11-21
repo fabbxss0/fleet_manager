@@ -39,11 +39,25 @@
         data: {labels, datasets: [{data: values, backgroundColor: opts.colors || "#2563eb", borderRadius: 6, maxBarThickness: 38}]},
         options: {
           maintainAspectRatio: false, indexAxis: opts.horizontal ? "y" : "x",
-          plugins: {legend: {display: false}, tooltip: {callbacks: {label: (c) => opts.money ? fcfa(c.parsed[opts.horizontal ? "x" : "y"]) : c.formattedValue}}},
+          plugins: {legend: {display: false}, tooltip: {callbacks: {label: (c) => opts.money ? fcfa(c.parsed[opts.horizontal ? "x" : "y"]) : c.formattedValue + (opts.unit || "")}}},
           scales: {
             [opts.horizontal ? "x" : "y"]: {beginAtZero: true, grid: {color: "#eef2f6"}, ticks: {callback: (v) => opts.money ? compact(v) : v, precision: 0}},
             [opts.horizontal ? "y" : "x"]: {grid: {display: false}},
           },
+        },
+      });
+    },
+    groupedBar(id, labels, datasets) {
+      // datasets : [{label, values, color}] — ex. entretien et carburant par mois
+      const canvas = document.getElementById(id);
+      if (!canvas || empty(canvas, labels, datasets.flatMap((d) => d.values))) return;
+      new Chart(canvas, {
+        type: "bar",
+        data: {labels, datasets: datasets.map((d) => ({label: d.label, data: d.values, backgroundColor: d.color, borderRadius: 5, maxBarThickness: 22}))},
+        options: {
+          maintainAspectRatio: false,
+          plugins: {legend: {position: "top", align: "end"}, tooltip: {callbacks: {label: (c) => `${c.dataset.label} : ${fcfa(c.parsed.y)}`}}},
+          scales: {y: {beginAtZero: true, grid: {color: "#eef2f6"}, ticks: {callback: (v) => compact(v)}}, x: {grid: {display: false}}},
         },
       });
     },

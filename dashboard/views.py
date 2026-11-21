@@ -48,6 +48,7 @@ def driver_space(request):
     }
     if vehicle:
         context["insurance"] = vehicle.current_insurance
+        context["my_fuel_entries"] = driver.fuel_entries.select_related("vehicle")[:5]
         context["last_maintenances"] = vehicle.maintenances.filter(status=Maintenance.Status.DONE)[:5]
         context["next_maintenance"] = vehicle.maintenances.filter(
             status=Maintenance.Status.DONE, next_date__isnull=False).order_by("-date").first()

@@ -15,6 +15,8 @@ from django.utils import timezone
 from alerts.models import Alert
 from assignments.models import Assignment
 from drivers.models import Driver
+from fuel import services as fuel_services
+from fuel.models import FuelEntry
 from insurance.models import Insurance
 from maintenance import services as maintenance_services
 from maintenance.models import Maintenance
@@ -147,6 +149,26 @@ def report_expenses(date_from, date_to):
     ]
 
 
+def report_fuel(date_from, date_to):
+    qs = _period(FuelEntry.objects.select_related("vehicle", "driver"), "date", date_from, date_to)
+    rows = [[d(e.date), e.vehicle.registration_number, e.driver.full_name if e.driver else "—", e.mileage,
+             f"{e.liters:.2f}".replace(".", ","), e.unit_price, e.total_amount, e.station or "—"] for e in qs]
+    total_liters = sum(e.liters for e in qs)
+    detail = Section("Pleins de carburant", ["Date", "Véhicule", "Conducteur", "Compteur", "Litres", "Prix/L (FCFA)",
+                                             "Montant (FCFA)", "Station"], rows,
+                     ["Total", f"{len(rows)} plein(s)", "", "", f"{total_liters:.2f}".replace(".", ","), "",
+                      fuel_services.total_amount(qs), ""], money_columns=(5, 6), number_columns=(3,))
+    summary_rows = []
+    for s in fuel_services.fleet_fuel_summary():
+        summary_rows.append([s["vehicle"].registration_number, f"{s['vehicle'].brand} {s['vehicle'].model}", s["entries"],
+                             f"{s['total_liters']:.0f}", f"{s['average']}".replace(".", ",") if s["average"] else "—",
+                             s["total_amount"]])
+    summary = Section("Consommation moyenne par véhicule (toutes périodes)",
+                      ["Immatriculation", "Véhicule", "Pleins", "Litres", "L/100 km", "Dépense (FCFA)"], summary_rows,
+                      money_columns=(5,), number_columns=(2,))
+    return [detail, summary]
+
+
 def report_general(date_from, date_to):
     from dashboard.services import get_kpis
 
@@ -165,6 +187,8 @@ def report_general(date_from, date_to):
         ["Entretiens à effectuer", k["maintenance_due"]],
         ["Alertes non lues", k["unread_alerts"]],
         ["Dépenses d'entretien sur la période (FCFA)", maintenance_services.total_cost(maint_qs)],
+        ["Dépenses de carburant sur la période (FCFA)",
+         fuel_services.total_amount(_period(FuelEntry.objects.all(), "date", date_from, date_to))],
         ["Valeur d'acquisition du parc (FCFA)", Vehicle.objects.aggregate(t=Sum("acquisition_price"))["t"] or 0],
     ], number_columns=(1,))
     cat_labels = dict(Vehicle.Category.choices)
@@ -188,6 +212,7 @@ REPORTS = {
     "affectations": ("Historique des affectations", "Affectations et kilomètres parcourus (période = début).", "arrow-left-right", report_assignments, True),
     "entretiens": ("Historique des entretiens", "Interventions et coûts (période = date d'intervention).", "tools", report_maintenances, True),
     "assurances": ("Situation des assurances", "Polices et échéances (période = date d'expiration).", "shield-check", report_insurances, True),
+    "carburant": ("Carburant et consommation", "Pleins, litres, dépenses et L/100 km (période = date du plein).", "fuel-pump", report_fuel, True),
     "depenses": ("Dépenses d'entretien", "Coûts par véhicule et par type d'intervention.", "cash-coin", report_expenses, True),
 }
 

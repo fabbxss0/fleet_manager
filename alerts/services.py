@@ -150,7 +150,22 @@ def assignment_candidates(cfg):
         )
 
 
-RULES = [insurance_candidates, license_candidates, maintenance_candidates, vehicle_candidates, assignment_candidates]
+def fuel_candidates(cfg):
+    """Consommation anormale : dernier plein > +30 % de la moyenne du véhicule."""
+    from fuel.services import detect_anomalies
+
+    for item in detect_anomalies():
+        entry, vehicle = item["entry"], item["vehicle"]
+        yield Candidate(
+            f"fuel:{entry.pk}:anomalie", f"Consommation anormale — {vehicle.registration_number}",
+            f"{item['consumption']} L/100 km au plein du {_fmt(entry.date)} contre {item['reference']} L/100 km "
+            "habituellement. Vérifier une fuite, une panne ou un usage anormal.",
+            C.FUEL, P.WARNING, {"fuel_entry": entry, "vehicle": vehicle},
+        )
+
+
+RULES = [insurance_candidates, license_candidates, maintenance_candidates, vehicle_candidates,
+         assignment_candidates, fuel_candidates]
 
 
 @transaction.atomic

@@ -176,6 +176,23 @@ Points à savoir expliquer :
 
 Cela produit **une seule requête SQL** `GROUP BY` au lieu d'une boucle Python sur tous les entretiens.
 
+## 7 bis. Le module carburant
+
+**Fichier** : `fuel/services.py`
+
+- `FuelEntry.save()` calcule `total_amount = litres × prix` : le montant ne vient jamais du navigateur.
+- `entries_with_consumption()` parcourt les pleins dans l'ordre du compteur et calcule, pour chaque plein complet,
+  `litres / (km actuel − km précédent) × 100`. C'est la méthode « du plein à plein » : un plein complet remplace
+  exactement ce qui a été consommé depuis le plein précédent.
+- La moyenne d'un véhicule = total des litres mesurés ÷ total des km mesurés × 100 (et non la moyenne des
+  moyennes, qui donnerait trop de poids aux petits trajets).
+- `detect_anomalies()` compare le dernier plein à la moyenne des précédents ; au-delà de +30 %, la règle
+  `fuel_candidates` du moteur d'alertes crée une alerte. Ajouter cette règle n'a demandé qu'une fonction de plus
+  dans `RULES` : c'est l'intérêt de l'architecture du moteur.
+- Le conducteur déclare un plein via `driver_fuel_declare` : le formulaire ne contient pas le champ véhicule,
+  qui est imposé par le serveur (son affectation en cours). Même s'il envoie un autre véhicule, il est ignoré
+  (vérifié par un test).
+
 ## 8. Les formulaires
 
 - `core/forms.py` → `BootstrapFormMixin` ajoute les classes CSS Bootstrap à tous les champs (pas de

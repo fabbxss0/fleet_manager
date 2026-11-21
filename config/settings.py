@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     "assignments",
     "maintenance",
     "insurance",
+    "fuel",
     "alerts",
     "dashboard",
     "reports",

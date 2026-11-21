@@ -8,6 +8,8 @@ from alerts.models import Alert
 from assignments.models import Assignment
 from core.models import AppSettings
 from drivers.models import Driver
+from fuel import services as fuel_services
+from fuel.models import FuelEntry
 from insurance.models import Insurance
 from maintenance import services as maintenance_services
 from maintenance.models import Maintenance
@@ -42,6 +44,7 @@ def get_kpis():
         "maintenance_overdue": sum(1 for s in schedules if s["state"] == "overdue"),
         "unread_alerts": Alert.objects.filter(is_resolved=False, is_read=False).count(),
         "year_expenses": maintenance_services.total_cost(Maintenance.objects.filter(date__year=today.year)),
+        "year_fuel": fuel_services.total_amount(FuelEntry.objects.filter(date__year=today.year)),
     }
 
 
@@ -63,7 +66,8 @@ def get_chart_data():
     return {
         "category": _choices_dataset(by_category, Vehicle.Category.choices),
         "status": _choices_dataset(by_status, Vehicle.Status.choices),
-        "monthly": {"labels": [m.strftime("%m/%Y") for m, _ in monthly], "values": [t for _, t in monthly]},
+        "monthly": {"labels": [m.strftime("%m/%Y") for m, _ in monthly], "values": [t for _, t in monthly],
+                    "fuel": [t for _, t in fuel_services.cost_by_month(12)]},
         "per_vehicle": {
             "labels": [r["vehicle__registration_number"] for r in per_vehicle],
             "values": [float(r["total"]) for r in per_vehicle],

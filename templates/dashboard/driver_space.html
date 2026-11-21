@@ -12,7 +12,8 @@
 </div></div>
 
 <div class="row g-3 mb-3">
-  <div class="col-lg-7"><div class="card h-100"><div class="card-header"><i class="bi bi-car-front"></i> Mon véhicule affecté</div><div class="card-body">
+  <div class="col-lg-7"><div class="card h-100"><div class="card-header"><i class="bi bi-car-front"></i> Mon véhicule affecté
+    {% if vehicle %}<a href="{% url 'fuel:driver_declare' %}" class="btn btn-sm btn-primary card-actions"><i class="bi bi-fuel-pump me-1"></i>Déclarer un plein</a>{% endif %}</div><div class="card-body">
     {% if vehicle %}
       <div class="fm-hero mb-3"><div class="fm-hero-photo">{% if vehicle.photo %}<img src="{{ vehicle.photo.url }}" alt="">{% else %}<i class="bi bi-car-front"></i>{% endif %}</div>
         <div><span class="plate fs-6">{{ vehicle.registration_number }}</span><h5 class="mt-2 mb-0">{{ vehicle.brand }} {{ vehicle.model }}</h5><div class="text-muted">{{ vehicle.get_category_display }} · {{ vehicle.get_fuel_type_display }} · {{ vehicle.color }}</div></div></div>
@@ -32,6 +33,8 @@
       {% else %}<p class="text-danger fw-semibold"><i class="bi bi-exclamation-triangle me-1"></i>Aucune assurance valide : signalez-le au gestionnaire.</p>{% endif %}
       <h6 class="small text-uppercase text-muted">Prochain entretien</h6>
       {% if next_maintenance %}<p>{{ next_maintenance.get_intervention_type_display }} : {{ next_maintenance.next_date|date:"d/m/Y" }}{% if next_maintenance.next_mileage %} ou {{ next_maintenance.next_mileage|km }}{% endif %}</p>{% else %}<p class="text-muted">Non planifié.</p>{% endif %}
+      <h6 class="small text-uppercase text-muted mt-3">Mes derniers pleins</h6>
+      <ul class="list-unstyled small">{% for e in my_fuel_entries %}<li class="mb-1"><i class="bi bi-fuel-pump me-1 text-muted"></i>{{ e.date|date:"d/m/Y" }} — {{ e.liters }} L ({{ e.total_amount|fcfa }})</li>{% empty %}<li class="text-muted">Aucun.</li>{% endfor %}</ul>
       <h6 class="small text-uppercase text-muted">Derniers entretiens</h6>
       <ul class="list-unstyled small mb-0">{% for m in last_maintenances %}<li class="mb-1"><i class="bi bi-tools me-1 text-muted"></i>{{ m.date|date:"d/m/Y" }} — {{ m.get_intervention_type_display }}</li>{% empty %}<li class="text-muted">Aucun.</li>{% endfor %}</ul>
     {% else %}<p class="text-muted mb-0">—</p>{% endif %}

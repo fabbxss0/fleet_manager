@@ -40,8 +40,12 @@ class VehicleDetailView(StaffRequiredMixin, PageTitleMixin, DetailView):
         context["maintenances"] = vehicle.maintenances.all()[:50]
         context["insurances"] = vehicle.insurances.all()
         context["alerts"] = vehicle.alerts.filter(is_resolved=False)
+        from fuel.services import vehicle_fuel_summary
+
+        context["fuel"] = vehicle_fuel_summary(vehicle)
         context["has_history"] = (
             vehicle.assignments.exists() or vehicle.maintenances.exists() or vehicle.insurances.exists()
+            or vehicle.fuel_entries.exists()
         )
         # Chronologie unifiée (historique du véhicule)
         timeline = []
@@ -88,6 +92,6 @@ class VehicleDeleteView(StaffRequiredMixin, SafeDeleteView):
     success_url = reverse_lazy("vehicles:list")
     success_message = "Le véhicule a été supprimé."
     protected_message = (
-        "Suppression impossible : ce véhicule possède un historique (affectations, entretiens ou assurances). "
+        "Suppression impossible : ce véhicule possède un historique (affectations, entretiens, assurances ou carburant). "
         "Passez-le plutôt au statut « Hors service » pour conserver l'historique."
     )

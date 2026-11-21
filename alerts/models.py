@@ -12,6 +12,7 @@ class Alert(models.Model):
         TECHNICAL_CONTROL = "CONTROLE_TECHNIQUE", "Contrôle technique"
         VEHICLE = "VEHICULE", "Véhicule"
         ASSIGNMENT = "AFFECTATION", "Affectation"
+        FUEL = "CARBURANT", "Carburant"
 
     class Priority(models.IntegerChoices):
         # Valeurs numériques pour pouvoir trier du plus grave au moins grave
@@ -42,6 +43,7 @@ class Alert(models.Model):
     maintenance = models.ForeignKey(
         "maintenance.Maintenance", on_delete=models.CASCADE, null=True, blank=True, related_name="alerts"
     )
+    fuel_entry = models.ForeignKey("fuel.FuelEntry", on_delete=models.CASCADE, null=True, blank=True, related_name="alerts")
 
     class Meta:
         verbose_name = "alerte"
@@ -58,7 +60,7 @@ class Alert(models.Model):
     @property
     def target_url(self):
         """Lien vers l'élément concerné par l'alerte."""
-        for obj in (self.insurance, self.maintenance, self.assignment, self.driver, self.vehicle):
+        for obj in (self.insurance, self.maintenance, self.fuel_entry, self.assignment, self.driver, self.vehicle):
             if obj is not None:
                 return obj.get_absolute_url()
         return reverse("alerts:list")
@@ -71,5 +73,5 @@ class Alert(models.Model):
     def category_icon(self):
         return {
             "ASSURANCE": "shield-check", "PERMIS": "person-vcard", "ENTRETIEN": "tools",
-            "CONTROLE_TECHNIQUE": "clipboard-check", "VEHICULE": "car-front", "AFFECTATION": "arrow-left-right",
+            "CONTROLE_TECHNIQUE": "clipboard-check", "VEHICULE": "car-front", "AFFECTATION": "arrow-left-right", "CARBURANT": "fuel-pump",
         }.get(self.category, "bell")

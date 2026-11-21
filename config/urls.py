@@ -13,6 +13,7 @@ urlpatterns = [
     path("affectations/", include("assignments.urls")),
     path("entretiens/", include("maintenance.urls")),
     path("assurances/", include("insurance.urls")),
+    path("carburant/", include("fuel.urls")),
     path("alertes/", include("alerts.urls")),
     path("rapports/", include("reports.urls")),
     path("", include("core.urls")),

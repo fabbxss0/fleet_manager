@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load static fleet_tags %}
+{% block content %}
+{% include "fuel/_tabs.html" %}
+{% for a in anomalies %}
+<div class="alert alert-warning d-flex gap-2"><i class="bi bi-exclamation-triangle-fill mt-1"></i><div>
+  <strong>Consommation anormale — <span class="plate">{{ a.vehicle.registration_number }}</span></strong> :
+  {{ a.consumption }} L/100 km au plein du {{ a.entry.date|date:"d/m/Y" }}, contre {{ a.reference }} L/100 km habituellement. Vérifiez une éventuelle fuite, une panne ou un usage anormal.</div></div>
+{% endfor %}
+<div class="row g-3 mb-3">
+  <div class="col-lg-7"><div class="card h-100"><div class="card-header"><i class="bi bi-graph-up"></i> Dépenses de carburant par mois
+    <span class="card-actions small text-muted fw-normal">Total : <strong class="ms-1 text-dark">{{ total|fcfa }}</strong></span></div>
+    <div class="card-body"><div class="chart-box"><canvas id="fuelMonthly"></canvas></div></div></div></div>
+  <div class="col-lg-5"><div class="card h-100"><div class="card-header"><i class="bi bi-speedometer"></i> Consommation moyenne (L/100 km)</div>
+    <div class="card-body"><div class="chart-box"><canvas id="fuelAverage"></canvas></div></div></div></div>
+</div>
+<div class="card"><div class="card-header"><i class="bi bi-table"></i> Synthèse par véhicule</div>
+  <div class="table-responsive"><table class="table table-hover">
+    <thead><tr><th>Véhicule</th><th class="text-end">Pleins</th><th class="text-end">Litres</th><th class="text-end">Dépense</th><th class="text-end">Moyenne</th><th>Dernier plein</th><th></th></tr></thead><tbody>
+    {% for s in summaries %}<tr>
+      <td><a class="plate" href="{{ s.vehicle.get_absolute_url }}">{{ s.vehicle.registration_number }}</a> <span class="small text-muted">{{ s.vehicle.brand }} {{ s.vehicle.model }}</span></td>
+      <td class="text-end">{{ s.entries }}</td><td class="text-end tabular">{{ s.total_liters|thousands }} L</td>
+      <td class="text-end tabular fw-semibold">{{ s.total_amount|fcfa }}</td>
+      <td class="text-end tabular">{% if s.average %}{{ s.average }} L/100 km{% else %}<span class="text-muted">—</span>{% endif %}</td>
+      <td>{{ s.last.date|date:"d/m/Y" }}</td>
+      <td class="row-actions"><a href="{% url 'fuel:list' %}?vehicle={{ s.vehicle.pk }}" class="btn btn-light btn-sm"><i class="bi bi-eye"></i></a></td></tr>
+    {% empty %}<tr><td colspan="7">{% include "partials/empty.html" with icon="fuel-pump" title="Aucune donnée" text="Enregistrez des pleins pour calculer la consommation." %}</td></tr>{% endfor %}
+  </tbody></table></div>
+  <div class="fm-card-footer"><span><i class="bi bi-info-circle me-1"></i>Calcul « du plein à plein » : litres d'un plein complet ÷ kilomètres parcourus depuis le plein précédent × 100.</span></div>
+</div>
+{{ chart_months|json_script:"fm" }}{{ chart_totals|json_script:"ft" }}{{ chart_vehicles|json_script:"fv" }}{{ chart_averages|json_script:"fa" }}
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'vendor/chartjs/chart.umd.js' %}"></script>
+<script src="{% static 'js/charts.js' %}"></script>
+<script>
+  const j = (id) => JSON.parse(document.getElementById(id).textContent);
+  FleetCharts.bar("fuelMonthly", j("fm"), j("ft"), {money: true, colors: "#0284c7"});
+  FleetCharts.bar("fuelAverage", j("fv"), j("fa"), {horizontal: true, colors: "#0b1f3a", unit: " L/100 km"});
+</script>
+{% endblock %}

@@ -15,6 +15,7 @@
       {% elif v.status == 'DISPONIBLE' %}<span class="btn btn-light disabled" title="Aucune assurance valide"><i class="bi bi-shield-x text-danger me-1"></i>Non assuré : affectation impossible</span>{% endif %}
       <a href="{% url 'maintenance:create' %}?vehicle={{ v.pk }}" class="btn btn-light"><i class="bi bi-tools me-1"></i>Entretien</a>
       <a href="{% url 'insurance:create' %}?vehicle={{ v.pk }}" class="btn btn-light"><i class="bi bi-shield-plus me-1"></i>Assurance</a>
+      <a href="{% url 'fuel:create' %}?vehicle={{ v.pk }}" class="btn btn-light"><i class="bi bi-fuel-pump me-1"></i>Plein</a>
       <a href="{% url 'vehicles:update' v.pk %}" class="btn btn-light"><i class="bi bi-pencil"></i></a>
       <button class="btn btn-light text-danger" title="Supprimer" data-confirm-url="{% url 'vehicles:delete' v.pk %}" data-confirm-title="Supprimer {{ v.registration_number }} ?" data-confirm-text="{% if has_history %}Ce véhicule a un historique : la suppression sera refusée. Préférez le statut « Hors service ».{% else %}Cette action est définitive.{% endif %}"><i class="bi bi-trash"></i></button>
     </div>
@@ -31,6 +32,8 @@
   <div class="col-md-4"><div class="card kpi"><div class="kpi-icon tone-blue"><i class="bi bi-arrow-left-right"></i></div><div><div class="kpi-value">{{ v.assignments.count }}</div><div class="kpi-label">Affectations</div></div></div></div>
   <div class="col-md-4"><div class="card kpi"><div class="kpi-icon tone-amber"><i class="bi bi-tools"></i></div><div><div class="kpi-value">{{ v.maintenances.count }}</div><div class="kpi-label">Interventions</div></div></div></div>
   <div class="col-md-4"><div class="card kpi"><div class="kpi-icon tone-red"><i class="bi bi-cash-coin"></i></div><div><div class="kpi-value fs-5">{{ v.total_maintenance_cost|fcfa }}</div><div class="kpi-label">Coût total des entretiens</div></div></div></div>
+  <div class="col-md-6"><div class="card kpi"><div class="kpi-icon tone-sky"><i class="bi bi-speedometer"></i></div><div><div class="kpi-value">{% if fuel.average %}{{ fuel.average }} L/100 km{% else %}—{% endif %}</div><div class="kpi-label">Consommation moyenne</div></div></div></div>
+  <div class="col-md-6"><div class="card kpi"><div class="kpi-icon tone-blue"><i class="bi bi-fuel-pump"></i></div><div><div class="kpi-value fs-5">{{ fuel.total_amount|fcfa }}</div><div class="kpi-label">Dépense de carburant ({{ fuel.entries }} plein{{ fuel.entries|pluralize }})</div></div></div></div>
 </div>
 
 <div class="row g-3">
@@ -68,6 +71,7 @@
         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-aff" type="button">Affectations</button></li>
         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-ent" type="button">Entretiens</button></li>
         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-ass" type="button">Assurances</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-fuel" type="button">Carburant</button></li>
       </ul>
       <div class="tab-content">
         <div class="tab-pane fade show active card-body" id="t-hist">
@@ -88,6 +92,10 @@
           <thead><tr><th>Compagnie</th><th>Police</th><th>Validité</th><th class="text-end">Prime</th><th>État</th></tr></thead><tbody>
           {% for i in insurances %}<tr><td><a href="{{ i.get_absolute_url }}">{{ i.company }}</a></td><td>{{ i.policy_number }}</td><td>{{ i.start_date|date:"d/m/Y" }} → {{ i.end_date|date:"d/m/Y" }}</td><td class="text-end tabular">{{ i.premium|fcfa }}</td><td>{% status_badge i.state i.state_label %}</td></tr>
           {% empty %}<tr><td colspan="5" class="text-center text-muted py-4">Aucune assurance.</td></tr>{% endfor %}</tbody></table></div></div>
+        <div class="tab-pane fade" id="t-fuel"><div class="table-responsive"><table class="table">
+          <thead><tr><th>Date</th><th class="text-end">Compteur</th><th class="text-end">Litres</th><th class="text-end">Distance</th><th class="text-end">L/100 km</th><th class="text-end">Montant</th></tr></thead><tbody>
+          {% for e in fuel.rows reversed %}<tr><td>{{ e.date|date:"d/m/Y" }}</td><td class="text-end tabular">{{ e.mileage|km }}</td><td class="text-end tabular">{{ e.liters }} L</td><td class="text-end tabular">{{ e.distance|km }}</td><td class="text-end tabular">{{ e.consumption|default:"—" }}</td><td class="text-end tabular">{{ e.total_amount|fcfa }}</td></tr>
+          {% empty %}<tr><td colspan="6" class="text-center text-muted py-4">Aucun plein.</td></tr>{% endfor %}</tbody></table></div></div>
       </div>
     </div>
   </div>

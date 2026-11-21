@@ -67,7 +67,7 @@ Réinitialiser les données de démonstration : `python manage.py seed_demo --re
 | `python manage.py runserver` | Démarre le serveur de développement |
 | `python manage.py seed_demo [--reset]` | Données fictives : 15 véhicules, 10 conducteurs, affectations, entretiens, assurances, alertes |
 | `python manage.py generate_alerts` | Vérifie toutes les échéances et crée les alertes manquantes (sans doublon) |
-| `python manage.py test` | Lance les 59 tests automatisés |
+| `python manage.py test` | Lance les 69 tests automatisés |
 | `python manage.py createsuperuser` | Crée un administrateur supplémentaire |
 
 ### Génération des alertes
@@ -98,6 +98,7 @@ fleet_manager/
 ├── assignments/     Affectations + services.py (règles de gestion)
 ├── maintenance/     Entretiens + services.py (statut du véhicule, échéances, dépenses)
 ├── insurance/       Assurances
+├── fuel/            Carburant : pleins, consommation (services.py)
 ├── alerts/          Alertes + services.py (moteur de règles) + middleware + commande generate_alerts
 ├── dashboard/       Tableau de bord, statistiques (services.py) et espace conducteur
 ├── reports/         Rapports : services.py (définitions) + exporters.py (PDF et Excel)
@@ -126,6 +127,7 @@ AppSettings (une seule ligne : seuils d'alerte, nom de l'organisation)
 | `vehicles_vehicle` | PK id · `registration_number` **unique** · `chassis_number` unique · `status` |
 | `drivers_driver` | PK id · `license_number` unique · `user` OneToOne (SET_NULL) · CHECK expiration > délivrance |
 | `assignments_assignment` | FK `vehicle`, `driver` (**PROTECT**) · **une seule affectation EN_COURS par véhicule** et **par conducteur** (index uniques conditionnels) · CHECK fin ≥ début · CHECK km retour ≥ km départ |
+| `fuel_fuelentry` | FK `vehicle` (PROTECT), `driver` (SET_NULL) · litres > 0 · montant calculé · index (vehicle, mileage) |
 | `maintenance_maintenance` | FK `vehicle` (PROTECT) · coût ≥ 0 · index (vehicle, type, date) |
 | `insurance_insurance` | FK `vehicle` (PROTECT) · `policy_number` unique · CHECK expiration > début |
 | `alerts_alert` | FK facultatives vers l'élément concerné (CASCADE) · `dedup_key` **unique parmi les alertes non résolues** |
@@ -168,6 +170,13 @@ Aucune modification du code n'est nécessaire.
 - Deux polices d'un même véhicule ne peuvent pas se chevaucher dans le temps.
 - La page Assurances liste les véhicules en service sans assurance valide.
 
+**Carburant** (`fuel/services.py`)
+- Le montant d'un plein est toujours calculé par le serveur : litres × prix du litre.
+- Le compteur d'un plein doit être cohérent avec les pleins précédent et suivant ; la quantité ne peut pas dépasser la capacité du réservoir (+5 %).
+- Consommation calculée « du plein à plein » : litres d'un plein complet ÷ km parcourus depuis le plein précédent × 100.
+- Si le dernier plein dépasse de plus de 30 % la moyenne du véhicule (au moins 3 mesures), une alerte « Consommation anormale » est créée.
+- Un conducteur peut déclarer un plein, uniquement pour le véhicule qui lui est affecté.
+
 **Alertes** (`alerts/services.py`)
 
 | Situation | Priorité |
@@ -180,6 +189,7 @@ Aucune modification du code n'est nécessaire.
 | Contrôle technique à renouveler (30 j) / dépassé | Attention / Critique |
 | Véhicule immobilisé | Attention |
 | Retour d'affectation en retard (plus de 3 jours) | Attention (Urgent) |
+| Consommation de carburant anormale (+30 %) | Attention |
 
 Chaque alerte a une **clé de déduplication** (ex. `insurance:12:j7`) : relancer la génération
 ne crée jamais de doublon. Quand la situation disparaît (assurance renouvelée, véhicule réparé),
@@ -203,7 +213,7 @@ l'alerte passe automatiquement en « résolue » et rejoint l'historique.
 python manage.py test
 ```
 
-59 tests couvrent : ajout de véhicule, unicité de l'immatriculation (formulaire et base), ajout de conducteur,
+69 tests couvrent : ajout de véhicule, unicité de l'immatriculation (formulaire et base), ajout de conducteur,
 affectation, refus de deux affectations actives (service et contrainte SQL), refus d'un véhicule immobilisé /
 en entretien / hors service, validation des dates et kilométrages, génération des alertes (niveaux, absence de
 doublons, résolution, escalade), permissions des trois rôles, calcul des dépenses d'entretien, échéances
@@ -217,9 +227,10 @@ périodiques, tableau de bord et exports PDF / Excel de tous les rapports.
 - **Conducteurs** : CRUD, photo, suivi de l'expiration du permis, historique des affectations et distance parcourue.
 - **Affectations** : création guidée (seuls les véhicules et conducteurs éligibles sont proposés), retour, annulation, retards.
 - **Entretiens** : historique filtrable par période, « à prévoir », dépenses par véhicule, par type et par mois, justificatifs.
+- **Carburant** : saisie des pleins (par le gestionnaire ou le conducteur), consommation L/100 km par véhicule, dépenses mensuelles, détection des consommations anormales.
 - **Assurances** : CRUD, états (valide / expire bientôt / expirée), historique par véhicule, renouvellement en un clic.
 - **Alertes** : compteur et menu de notifications, page filtrable, lu / non lu, historique des alertes résolues.
-- **Rapports** : 9 rapports, filtre par période, aperçu, export PDF et Excel mis en forme, date de génération.
+- **Rapports** : 10 rapports, filtre par période, aperçu, export PDF et Excel mis en forme, date de génération.
 - **Utilisateurs** (administrateur) : création, rôles, rattachement à une fiche conducteur, réinitialisation du mot de passe.
 - **Paramètres** : nom de l'organisation et seuils des alertes ; **recherche globale** dans la barre supérieure.
 - Interface responsive (ordinateur, tablette, smartphone).

@@ -22,6 +22,8 @@ from assignments.models import Assignment
 from assignments.services import create_assignment
 from core.models import AppSettings
 from drivers.models import Driver
+from fuel.models import FuelEntry
+from fuel.services import save_fuel_entry
 from insurance.models import Insurance
 from maintenance.models import Maintenance
 from vehicles.models import Vehicle
@@ -93,6 +95,7 @@ class Command(BaseCommand):
             self._create_maintenances(vehicles)
             self._create_assignments(vehicles, drivers)
             self._set_special_statuses(vehicles)
+            self._create_fuel_entries(vehicles, drivers)
         result = generate_alerts()
         # Quelques alertes d'information déjà lues, pour montrer les deux états
         for alert in Alert.objects.filter(priority=Alert.Priority.INFO)[:2]:
@@ -101,13 +104,15 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(
             f"Données créées : {Vehicle.objects.count()} véhicules, {Driver.objects.count()} conducteurs, "
             f"{Assignment.objects.count()} affectations, {Maintenance.objects.count()} entretiens, "
-            f"{Insurance.objects.count()} assurances, {result['open']} alertes."))
+            f"{Insurance.objects.count()} assurances, {FuelEntry.objects.count()} pleins, "
+            f"{result['open']} alertes."))
         self.stdout.write("Comptes de démonstration :")
         for username, password in DEMO_PASSWORDS.items():
             self.stdout.write(f"  - {username} / {password}")
 
     def _reset(self):
         Alert.objects.all().delete()
+        FuelEntry.objects.all().delete()
         Assignment.objects.all().delete()
         Maintenance.objects.all().delete()
         Insurance.objects.all().delete()
@@ -271,3 +276,26 @@ class Command(BaseCommand):
             status=Vehicle.Status.IMMOBILIZED, notes="Immobilisé : assurance expirée et pont arrière à reprendre.")
         Vehicle.objects.filter(pk=vehicles[14].pk).update(
             status=Vehicle.Status.OUT_OF_SERVICE, notes="Réformé : coût de remise en état trop élevé.")
+
+    def _create_fuel_entries(self, vehicles, drivers):
+        """Pleins des 6 derniers mois ; le dernier plein du 11 JK 4521 simule une consommation anormale."""
+        # index du véhicule -> (consommation habituelle L/100 km, prix du litre)
+        profiles = {0: (10.5, 675), 1: (12.8, 675), 2: (7.2, 850), 5: (8.4, 850), 13: (10.1, 675),
+                    3: (11.0, 675), 6: (7.8, 675), 9: (13.5, 675), 12: (8.9, 850)}
+        stations = ["Total Ouaga 2000", "Shell Kwamé N'Krumah", "Oryx Gounghin", "Total Tampouy", "SONABHY Relais"]
+        for index, (consumption, price) in profiles.items():
+            vehicle = Vehicle.objects.get(pk=vehicles[index].pk)
+            current = vehicle.current_assignment
+            driver = current.driver if current else drivers[index % len(drivers)]
+            fills, km = 8, vehicle.mileage - 8 * 420
+            for n in range(fills):
+                km += 380 + (n * 37) % 90
+                rate = consumption * (1 + ((n * 7) % 5 - 2) / 100)  # petites variations réalistes
+                if index == 0 and n == fills - 1:
+                    rate = consumption * 1.55  # anomalie volontaire
+                liters = Decimal(str(round((380 + (n * 37) % 90) * rate / 100, 2)))
+                save_fuel_entry(FuelEntry(
+                    vehicle=vehicle, driver=driver, date=self.today - timedelta(days=(fills - n) * 21),
+                    mileage=min(km, vehicle.mileage), liters=liters, unit_price=Decimal(price),
+                    station=stations[(index + n) % len(stations)], full_tank=True,
+                ))

@@ -26,8 +26,8 @@
 </div>
 
 <div class="row g-3 mb-3">
-  <div class="col-lg-8"><div class="card h-100"><div class="card-header"><i class="bi bi-graph-up"></i> Évolution des dépenses d'entretien par mois
-    <span class="card-actions small text-muted fw-normal">Année {% now "Y" %} : <strong class="ms-1 text-dark">{{ kpis.year_expenses|fcfa }}</strong></span></div>
+  <div class="col-lg-8"><div class="card h-100"><div class="card-header"><i class="bi bi-graph-up"></i> Dépenses mensuelles : entretien et carburant
+    <span class="card-actions small text-muted fw-normal">{% now "Y" %} : entretien <strong class="mx-1 text-dark">{{ kpis.year_expenses|fcfa }}</strong> · carburant <strong class="ms-1 text-dark">{{ kpis.year_fuel|fcfa }}</strong></span></div>
     <div class="card-body"><div class="chart-box"><canvas id="chartMonthly"></canvas></div></div></div></div>
   <div class="col-lg-4"><div class="card h-100"><div class="card-header"><i class="bi bi-pie-chart"></i> Véhicules par statut</div>
     <div class="card-body"><div class="chart-box"><canvas id="chartStatus"></canvas></div></div></div></div>
@@ -68,7 +68,10 @@
 <script src="{% static 'js/charts.js' %}"></script>
 <script>
   const data = JSON.parse(document.getElementById("dashboard-data").textContent);
-  FleetCharts.bar("chartMonthly", data.monthly.labels, data.monthly.values, {money: true});
+  FleetCharts.groupedBar("chartMonthly", data.monthly.labels, [
+    {label: "Entretien", values: data.monthly.values, color: "#2563eb"},
+    {label: "Carburant", values: data.monthly.fuel, color: "#0284c7"},
+  ]);
   FleetCharts.doughnut("chartStatus", data.status.labels, data.status.values, data.status.keys.map((k) => FleetCharts.STATUS_COLORS[k]));
   FleetCharts.doughnut("chartCategory", data.category.labels, data.category.values);
   FleetCharts.bar("chartPerVehicle", data.per_vehicle.labels, data.per_vehicle.values, {money: true, horizontal: true, colors: "#0b1f3a"});

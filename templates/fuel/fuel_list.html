@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load fleet_tags %}
+{% block content %}
+<div class="d-flex flex-wrap gap-2 align-items-start">
+  {% include "fuel/_tabs.html" %}
+  <a href="{% url 'fuel:create' %}{% if current_filters.vehicle %}?vehicle={{ current_filters.vehicle }}{% endif %}" class="btn btn-primary ms-auto mb-3"><i class="bi bi-fuel-pump me-1"></i>Enregistrer un plein</a>
+</div>
+{% if summary %}
+<div class="row g-3 mb-3">
+  <div class="col-sm-6 col-lg-3"><div class="card kpi"><div class="kpi-icon tone-navy"><i class="bi bi-car-front"></i></div><div><div class="kpi-value fs-6"><span class="plate">{{ summary.vehicle.registration_number }}</span></div><div class="kpi-label">{{ summary.vehicle.brand }} {{ summary.vehicle.model }}</div></div></div></div>
+  <div class="col-sm-6 col-lg-3"><div class="card kpi"><div class="kpi-icon tone-blue"><i class="bi bi-speedometer"></i></div><div><div class="kpi-value">{% if summary.average %}{{ summary.average }}{% else %}—{% endif %}</div><div class="kpi-label">L/100 km en moyenne</div></div></div></div>
+  <div class="col-sm-6 col-lg-3"><div class="card kpi"><div class="kpi-icon tone-sky"><i class="bi bi-droplet"></i></div><div><div class="kpi-value">{{ summary.total_liters|thousands }}</div><div class="kpi-label">Litres au total</div></div></div></div>
+  <div class="col-sm-6 col-lg-3"><div class="card kpi"><div class="kpi-icon tone-red"><i class="bi bi-cash-coin"></i></div><div><div class="kpi-value fs-5">{{ summary.total_amount|fcfa }}</div><div class="kpi-label">Dépense totale</div></div></div></div>
+</div>
+{% endif %}
+<div class="card">
+  <form class="fm-toolbar js-autofilter" method="get">
+    <input type="search" name="q" value="{{ q }}" class="form-control fm-filter-search" placeholder="Véhicule, station, conducteur…" data-autofocus>
+    <select name="vehicle" class="form-select"><option value="">Tous les véhicules</option>
+      {% for v in vehicles %}<option value="{{ v.pk }}" {% if current_filters.vehicle == v.pk|stringformat:"s" %}selected{% endif %}>{{ v.registration_number }}</option>{% endfor %}</select>
+    <input type="date" name="du" value="{{ du }}" class="form-control" aria-label="Du" title="Du">
+    <input type="date" name="au" value="{{ au }}" class="form-control" aria-label="Au" title="Au">
+  </form>
+  <div class="table-responsive"><table class="table table-hover">
+    <thead><tr><th>Date</th><th>Véhicule</th><th>Conducteur</th><th class="text-end">Compteur</th><th class="text-end">Litres</th><th class="text-end">Prix / L</th><th class="text-end">Montant</th><th>Station</th><th></th></tr></thead>
+    <tbody>
+    {% for e in object_list %}
+      <tr>
+        <td>{{ e.date|date:"d/m/Y" }}{% if not e.full_tank %} <span class="badge badge-soft-secondary" title="Plein partiel">partiel</span>{% endif %}</td>
+        <td><a href="{{ e.vehicle.get_absolute_url }}" class="plate">{{ e.vehicle.registration_number }}</a></td>
+        <td>{{ e.driver.full_name|default:"—" }}</td>
+        <td class="text-end tabular">{{ e.mileage|km }}</td>
+        <td class="text-end tabular">{{ e.liters }} L</td>
+        <td class="text-end tabular">{{ e.unit_price|fcfa }}</td>
+        <td class="text-end tabular fw-semibold">{{ e.total_amount|fcfa }}</td>
+        <td>{{ e.station|default:"—" }}{% if e.receipt %} <a href="{{ e.receipt.url }}" target="_blank" rel="noopener" title="Reçu"><i class="bi bi-paperclip"></i></a>{% endif %}</td>
+        <td class="row-actions">
+          <a class="btn btn-light btn-sm" href="{% url 'fuel:update' e.pk %}" title="Modifier"><i class="bi bi-pencil"></i></a>
+          <button class="btn btn-light btn-sm text-danger" title="Supprimer" data-confirm-url="{% url 'fuel:delete' e.pk %}" data-confirm-title="Supprimer ce plein ?" data-confirm-text="{{ e }} — action définitive."><i class="bi bi-trash"></i></button>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="9">{% url 'fuel:create' as create_url %}{% include "partials/empty.html" with icon="fuel-pump" title="Aucun plein enregistré" action_url=create_url action_label="Enregistrer un plein" %}</td></tr>
+    {% endfor %}
+    </tbody>
+    {% if object_list %}<tfoot><tr><td colspan="4" class="text-end fw-semibold">Total filtré</td><td class="text-end fw-bold tabular">{{ filtered_liters }} L</td><td></td><td class="text-end fw-bold tabular">{{ filtered_total|fcfa }}</td><td colspan="2"></td></tr></tfoot>{% endif %}
+  </table></div>
+  {% include "partials/pagination.html" %}
+</div>
+{% endblock %}
