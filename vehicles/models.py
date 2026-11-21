@@ -88,7 +88,8 @@ class Vehicle(models.Model):
 
     @property
     def is_assignable(self):
-        return self.status == self.Status.AVAILABLE
+        """Disponible ET couvert par une assurance valide aujourd'hui."""
+        return self.status == self.Status.AVAILABLE and self.current_insurance is not None
 
     @property
     def total_maintenance_cost(self):
@@ -98,6 +99,12 @@ class Vehicle(models.Model):
     @property
     def current_assignment(self):
         return self.assignments.filter(status="EN_COURS").select_related("driver").first()
+
+    @classmethod
+    def insured_today_filter(cls):
+        """Condition ORM : véhicule couvert par une assurance valide aujourd'hui."""
+        today = timezone.localdate()
+        return models.Q(insurances__start_date__lte=today, insurances__end_date__gte=today)
 
     @property
     def current_insurance(self):

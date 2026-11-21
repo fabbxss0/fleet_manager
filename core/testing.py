@@ -21,7 +21,8 @@ def make_user(role=User.Role.MANAGER, username=None, password="MotDePasse#2026")
     return User.objects.create_user(username=username, password=password, role=role)
 
 
-def make_vehicle(**kwargs):
+def make_vehicle(insured=False, **kwargs):
+    """Crée un véhicule ; insured=True ajoute une assurance valide aujourd'hui."""
     n = next(_seq)
     data = dict(
         registration_number=f"11 TT {1000 + n}", brand="Toyota", model="Hilux", category=Vehicle.Category.PICKUP,
@@ -29,7 +30,16 @@ def make_vehicle(**kwargs):
         acquisition_date=today() - timedelta(days=400), acquisition_price=Decimal("20000000"), mileage=10000,
     )
     data.update(kwargs)
-    return Vehicle.objects.create(**data)
+    vehicle = Vehicle.objects.create(**data)
+    if insured:
+        from insurance.models import Insurance
+
+        Insurance.objects.create(
+            vehicle=vehicle, company="Assureur test", policy_number=f"TEST-{n}", insurance_type="RC",
+            subscription_date=today() - timedelta(days=30), start_date=today() - timedelta(days=30),
+            end_date=today() + timedelta(days=335), premium=Decimal("150000"),
+        )
+    return vehicle
 
 
 def make_driver(**kwargs):

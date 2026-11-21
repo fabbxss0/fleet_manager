@@ -11,7 +11,8 @@
       <div class="text-muted">{{ v.get_category_display }} · {{ v.get_fuel_type_display }} · {{ v.year }} · {{ v.mileage|km }}</div>
     </div>
     <div class="d-flex flex-wrap gap-2">
-      {% if v.is_assignable %}<a href="{% url 'assignments:create' %}?vehicle={{ v.pk }}" class="btn btn-primary"><i class="bi bi-arrow-left-right me-1"></i>Affecter</a>{% endif %}
+      {% if v.is_assignable %}<a href="{% url 'assignments:create' %}?vehicle={{ v.pk }}" class="btn btn-primary"><i class="bi bi-arrow-left-right me-1"></i>Affecter</a>
+      {% elif v.status == 'DISPONIBLE' %}<span class="btn btn-light disabled" title="Aucune assurance valide"><i class="bi bi-shield-x text-danger me-1"></i>Non assuré : affectation impossible</span>{% endif %}
       <a href="{% url 'maintenance:create' %}?vehicle={{ v.pk }}" class="btn btn-light"><i class="bi bi-tools me-1"></i>Entretien</a>
       <a href="{% url 'insurance:create' %}?vehicle={{ v.pk }}" class="btn btn-light"><i class="bi bi-shield-plus me-1"></i>Assurance</a>
       <a href="{% url 'vehicles:update' v.pk %}" class="btn btn-light"><i class="bi bi-pencil"></i></a>

@@ -21,7 +21,7 @@ def new_assignment(vehicle, driver, **kwargs):
 
 class AssignmentRulesTests(TestCase):
     def setUp(self):
-        self.vehicle = make_vehicle(mileage=10000)
+        self.vehicle = make_vehicle(insured=True, mileage=10000)
         self.driver = make_driver()
 
     def test_assign_vehicle_sets_status_assigned(self):
@@ -42,16 +42,29 @@ class AssignmentRulesTests(TestCase):
     def test_driver_cannot_have_two_vehicles(self):
         create_assignment(new_assignment(self.vehicle, self.driver))
         with self.assertRaises(ValidationError) as ctx:
-            create_assignment(new_assignment(make_vehicle(), self.driver))
+            create_assignment(new_assignment(make_vehicle(insured=True), self.driver))
         self.assertIn("driver", ctx.exception.message_dict)
 
     def test_immobilized_vehicle_cannot_be_assigned(self):
         for status in (Vehicle.Status.IMMOBILIZED, Vehicle.Status.MAINTENANCE, Vehicle.Status.OUT_OF_SERVICE):
-            vehicle = make_vehicle(status=status)
+            vehicle = make_vehicle(insured=True, status=status)
             with self.assertRaises(ValidationError) as ctx:
                 create_assignment(new_assignment(vehicle, make_driver()))
             self.assertIn("vehicle", ctx.exception.message_dict)
         self.assertFalse(Assignment.objects.exists())
+
+    def test_uninsured_vehicle_cannot_be_assigned(self):
+        uninsured = make_vehicle()
+        with self.assertRaises(ValidationError) as ctx:
+            create_assignment(new_assignment(uninsured, self.driver))
+        self.assertIn("assurance", str(ctx.exception.message_dict["vehicle"]))
+
+    def test_expired_insurance_blocks_assignment(self):
+        from insurance.models import Insurance
+
+        Insurance.objects.filter(vehicle=self.vehicle).update(end_date=today() - timedelta(days=1))
+        with self.assertRaises(ValidationError):
+            create_assignment(new_assignment(self.vehicle, self.driver))
 
     def test_driver_with_expired_license_cannot_be_assigned(self):
         driver = make_driver(license_expiry_date=today() - timedelta(days=1))
@@ -92,7 +105,7 @@ class AssignmentViewTests(TestCase):
         self.client.force_login(make_user(User.Role.MANAGER))
 
     def test_create_and_return_through_views(self):
-        vehicle, driver = make_vehicle(mileage=5000), make_driver()
+        vehicle, driver = make_vehicle(insured=True, mileage=5000), make_driver()
         response = self.client.post(reverse("assignments:create"), {
             "vehicle": vehicle.pk, "driver": driver.pk, "start_date": today().isoformat(),
             "expected_end_date": (today() + timedelta(days=2)).isoformat(), "start_mileage": 5000,

@@ -67,7 +67,7 @@ Réinitialiser les données de démonstration : `python manage.py seed_demo --re
 | `python manage.py runserver` | Démarre le serveur de développement |
 | `python manage.py seed_demo [--reset]` | Données fictives : 15 véhicules, 10 conducteurs, affectations, entretiens, assurances, alertes |
 | `python manage.py generate_alerts` | Vérifie toutes les échéances et crée les alertes manquantes (sans doublon) |
-| `python manage.py test` | Lance les 57 tests automatisés |
+| `python manage.py test` | Lance les 59 tests automatisés |
 | `python manage.py createsuperuser` | Crée un administrateur supplémentaire |
 
 ### Génération des alertes
@@ -150,6 +150,7 @@ Aucune modification du code n'est nécessaire.
 **Affectations** (`assignments/services.py`)
 - Un véhicule ne peut pas avoir deux affectations actives ; un conducteur ne peut pas avoir deux véhicules.
 - Un véhicule en entretien, immobilisé ou hors service ne peut pas être affecté.
+- Le véhicule doit être couvert par une **assurance valide** le jour de l'affectation.
 - Le conducteur doit être actif et avoir un permis valide.
 - Le kilométrage au départ ne peut pas être inférieur au compteur ; au retour, il ne peut pas être inférieur au départ.
 - Au retour, le compteur du véhicule est mis à jour et le véhicule redevient disponible,
@@ -202,7 +203,7 @@ l'alerte passe automatiquement en « résolue » et rejoint l'historique.
 python manage.py test
 ```
 
-57 tests couvrent : ajout de véhicule, unicité de l'immatriculation (formulaire et base), ajout de conducteur,
+59 tests couvrent : ajout de véhicule, unicité de l'immatriculation (formulaire et base), ajout de conducteur,
 affectation, refus de deux affectations actives (service et contrainte SQL), refus d'un véhicule immobilisé /
 en entretien / hors service, validation des dates et kilométrages, génération des alertes (niveaux, absence de
 doublons, résolution, escalade), permissions des trois rôles, calcul des dépenses d'entretien, échéances

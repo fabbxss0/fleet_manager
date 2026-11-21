@@ -25,7 +25,8 @@ class AssignmentCreateForm(BootstrapFormMixin, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Seuls les véhicules disponibles et les conducteurs libres sont proposés
-        self.fields["vehicle"].queryset = Vehicle.objects.filter(status=Vehicle.Status.AVAILABLE)
+        self.fields["vehicle"].queryset = Vehicle.objects.filter(
+            Vehicle.insured_today_filter(), status=Vehicle.Status.AVAILABLE).distinct()
         self.fields["driver"].queryset = Driver.objects.filter(
             status=Driver.Status.ACTIVE, license_expiry_date__gte=timezone.localdate()
         ).exclude(assignments__status=Assignment.Status.ACTIVE)

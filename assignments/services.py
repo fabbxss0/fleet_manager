@@ -21,6 +21,11 @@ def check_assignment_rules(vehicle, driver, exclude_pk=None):
             f"Le véhicule {vehicle.registration_number} est « {vehicle.get_status_display()} » "
             "et ne peut pas être affecté."
         )
+    elif vehicle.current_insurance is None:
+        errors["vehicle"] = (
+            f"Le véhicule {vehicle.registration_number} n'a aucune assurance valide aujourd'hui : "
+            "il ne peut pas circuler. Enregistrez d'abord une assurance."
+        )
     active = Assignment.objects.filter(status=Assignment.Status.ACTIVE)
     if exclude_pk:
         active = active.exclude(pk=exclude_pk)
