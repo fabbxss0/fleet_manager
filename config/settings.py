@@ -8,14 +8,35 @@ en production et vers PostgreSQL.
 import os
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get(
-    "DJANGO_SECRET_KEY",
-    "dev-insecure-fleet-manager-key-a-remplacer-en-production",
-)
+
+def load_env_file(path):
+    """
+    Charge un fichier .env (lignes CLE=valeur) dans les variables d'environnement.
+    Les variables déjà définies (ex. par le serveur) gardent la priorité.
+    """
+    if not path.exists():
+        return
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            key, value = line.split("=", 1)
+            os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+load_env_file(BASE_DIR / ".env")
+
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
+DEV_SECRET_KEY = "dev-insecure-fleet-manager-key-a-remplacer-en-production"
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", DEV_SECRET_KEY)
+if not DEBUG and SECRET_KEY == DEV_SECRET_KEY:
+    raise ImproperlyConfigured("En production, définissez DJANGO_SECRET_KEY (voir DEPLOIEMENT.md).")
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost,testserver").split(",")
+# Ex. : https://votrecompte.pythonanywhere.com
+CSRF_TRUSTED_ORIGINS = [o for o in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -138,9 +159,21 @@ SESSION_COOKIE_AGE = 60 * 60 * 8  # 8 heures
 CSRF_COOKIE_HTTPONLY = False
 X_FRAME_OPTIONS = "DENY"
 if not DEBUG:
+    # Production : cookies uniquement en HTTPS, protections navigateur renforcées
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_REFERRER_POLICY = "same-origin"
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = os.environ.get("DJANGO_SSL_REDIRECT", "1") == "1"
+    SECURE_HSTS_SECONDS = int(os.environ.get("DJANGO_HSTS_SECONDS", "0"))  # à augmenter une fois le HTTPS validé
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "root": {"handlers": ["console"], "level": "WARNING"},
+}
 
 from django.contrib.messages import constants as message_constants  # noqa: E402
 
