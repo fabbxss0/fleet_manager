@@ -27,6 +27,7 @@
         {% include "partials/field.html" with field=form.email %}
         {% include "partials/field.html" with field=form.phone %}
         {% include "partials/field.html" with field=form.photo col="col-12" %}
+        {% if user.is_staff_member %}{% include "partials/field.html" with field=form.email_alerts col="col-12" %}{% endif %}
       </div></div>
       <div class="fm-form-actions"><button class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Enregistrer</button></div>
     </form>

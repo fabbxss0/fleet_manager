@@ -49,6 +49,7 @@ class Alert(models.Model):
     )
     created_at = models.DateTimeField("créée le", auto_now_add=True)
     resolved_at = models.DateTimeField("résolue le", null=True, blank=True)
+    emailed_at = models.DateTimeField("notifiée par email le", null=True, blank=True)
     # Clé technique décrivant la situation (ex. « insurance:12:j7 ») : empêche les doublons
     dedup_key = models.CharField("clé de déduplication", max_length=120, db_index=True)
     # Élément concerné (une alerte peut concerner un véhicule, un conducteur ou une affectation)

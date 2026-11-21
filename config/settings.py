@@ -146,6 +146,25 @@ from django.contrib.messages import constants as message_constants  # noqa: E402
 
 MESSAGE_TAGS = {message_constants.ERROR: "danger"}
 
+# --- Envoi des emails -------------------------------------------------------
+# Par défaut, les emails sont affichés dans la console (aucun envoi réel).
+# Pour un envoi réel, définir les variables d'environnement, par exemple avec Gmail :
+#   EMAIL_HOST=smtp.gmail.com  EMAIL_PORT=587  EMAIL_USE_TLS=1
+#   EMAIL_HOST_USER=adresse@gmail.com  EMAIL_HOST_PASSWORD=<mot de passe d'application>
+if os.environ.get("EMAIL_HOST"):
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    EMAIL_HOST = os.environ["EMAIL_HOST"]
+    EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+    EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+    EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+    EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "1") == "1"
+    EMAIL_TIMEOUT = 15
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "FLEET MANAGER <no-reply@fleet-manager.local>")
+# Adresse du site, utilisée pour les liens dans les emails
+SITE_URL = os.environ.get("SITE_URL", "http://127.0.0.1:8000")
+
 # --- Paramètres métier ------------------------------------------------------
 # Délai minimal (en minutes) entre deux régénérations automatiques des alertes
 ALERTS_AUTO_REFRESH_MINUTES = 10

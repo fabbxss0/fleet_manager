@@ -25,6 +25,8 @@ class LoginView(auth_views.LoginView):
 @login_required
 def profile_view(request):
     form = ProfileForm(request.POST or None, request.FILES or None, instance=request.user)
+    if not request.user.is_staff_member:
+        del form.fields["email_alerts"]  # les conducteurs ne reçoivent pas les alertes du parc
     if request.method == "POST":
         if form.is_valid():
             form.save()

@@ -92,7 +92,13 @@ def alert_mark_all_read(request):
 @staff_required
 @require_POST
 def alert_refresh(request):
+    from .notifications import send_alert_emails
+
     result = generate_alerts()
-    messages.success(request, f"Vérification des échéances terminée : {result['created']} nouvelle(s) alerte(s), "
-                              f"{result['resolved']} résolue(s).")
+    sent = send_alert_emails()
+    message = (f"Vérification des échéances terminée : {result['created']} nouvelle(s) alerte(s), "
+               f"{result['resolved']} résolue(s).")
+    if sent["alerts"]:
+        message += f" {sent['alerts']} alerte(s) urgente(s) envoyée(s) par email à {sent['recipients']} personne(s)."
+    messages.success(request, message)
     return _back(request)

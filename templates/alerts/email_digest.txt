@@ -1,0 +1,9 @@
+FLEET MANAGER — Nouvelles alertes urgentes ({{ date|date:"d/m/Y H:i" }})
+
+{% for a in alerts %}- [{{ a.get_priority_display|upper }}] {{ a.title }}
+  {{ a.description }}
+  {{ site_url }}{% url 'alerts:open' a.pk %}
+
+{% endfor %}Toutes les alertes : {{ site_url }}{% url 'alerts:list' %}
+
+Vous recevez cet email car les notifications sont activées dans votre profil FLEET MANAGER.

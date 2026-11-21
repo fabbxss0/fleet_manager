@@ -24,6 +24,12 @@
       <a href="{% url 'accounts:password_change' %}" class="list-group-item list-group-item-action"><i class="bi bi-key me-2"></i>Changer mon mot de passe</a>
       {% if user.is_admin %}<a href="{% url 'accounts:user_list' %}" class="list-group-item list-group-item-action"><i class="bi bi-people me-2"></i>Gérer les utilisateurs</a>{% endif %}
     </div></div>
+    <div class="card mb-3"><div class="card-header"><i class="bi bi-envelope"></i> Notifications par email</div><div class="card-body small">
+      {% if email_mode == "smtp" %}<p class="mb-2"><span class="badge badge-soft-success">Actif</span> Envoi réel via <strong>{{ email_host }}</strong>.</p>
+      {% else %}<p class="mb-2"><span class="badge badge-soft-warning">Mode console</span> Les emails sont affichés dans le terminal du serveur, sans envoi réel. Voir le README pour configurer un serveur SMTP (Gmail…).</p>{% endif %}
+      <p class="text-muted mb-2">Les nouvelles alertes urgentes et critiques sont envoyées aux administrateurs et gestionnaires qui l'ont accepté dans « Mon profil ».</p>
+      {% if user.is_admin %}<form method="post" action="{% url 'core:email_test' %}">{% csrf_token %}<button class="btn btn-sm btn-light"><i class="bi bi-send me-1"></i>M'envoyer un email de test</button></form>{% endif %}
+    </div></div>
     <div class="card"><div class="card-header"><i class="bi bi-info-circle"></i> Informations système</div><div class="card-body"><dl class="fm-dl small">
       <dt>Langue</dt><dd>Français</dd><dt>Devise</dt><dd>Franc CFA (FCFA)</dd>
       <dt>Format des dates</dt><dd>JJ/MM/AAAA</dd><dt>Fuseau horaire</dt><dd>Africa/Ouagadougou</dd>

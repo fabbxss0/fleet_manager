@@ -15,6 +15,10 @@ class User(AbstractUser):
 
     role = models.CharField("rôle", max_length=20, choices=Role.choices, default=Role.MANAGER)
     phone = models.CharField("téléphone", max_length=30, blank=True)
+    email_alerts = models.BooleanField(
+        "recevoir les alertes urgentes par email", default=True,
+        help_text="Un email récapitulatif est envoyé quand de nouvelles alertes urgentes ou critiques apparaissent.",
+    )
     photo = models.ImageField(
         "photo", upload_to="users/", blank=True, null=True, validators=[validate_image_file]
     )

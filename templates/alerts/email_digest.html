@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="fr"><body style="margin:0;background:#f3f5f9;font-family:Arial,Helvetica,sans-serif;color:#0f172a">
+<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:10px;overflow:hidden">
+  <tr><td style="background:#0b1f3a;color:#ffffff;padding:18px 24px;font-weight:bold;font-size:18px;letter-spacing:1px">FLEET MANAGER</td></tr>
+  <tr><td style="padding:20px 24px 8px"><h2 style="margin:0 0 4px;font-size:18px">{{ alerts|length }} nouvelle(s) alerte(s) urgente(s)</h2>
+    <p style="margin:0;color:#64748b;font-size:13px">{{ date|date:"d/m/Y à H:i" }}</p></td></tr>
+  {% for a in alerts %}
+  <tr><td style="padding:8px 24px"><table width="100%" cellpadding="0" cellspacing="0" style="border-left:4px solid {% if a.priority == 4 %}#dc2626{% else %}#ea580c{% endif %};background:#f8fafc;border-radius:6px">
+    <tr><td style="padding:10px 14px">
+      <span style="font-size:11px;font-weight:bold;color:{% if a.priority == 4 %}#b91c1c{% else %}#c2410c{% endif %};text-transform:uppercase">{{ a.get_priority_display }} · {{ a.get_category_display }}</span>
+      <div style="font-weight:bold;margin:2px 0 4px">{{ a.title }}</div>
+      <div style="font-size:13px;color:#475569">{{ a.description }}</div>
+      <a href="{{ site_url }}{% url 'alerts:open' a.pk %}" style="font-size:13px;color:#2563eb">Voir le détail →</a>
+    </td></tr></table></td></tr>
+  {% endfor %}
+  <tr><td style="padding:16px 24px 24px"><a href="{{ site_url }}{% url 'alerts:list' %}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:10px 18px;border-radius:8px;font-weight:bold">Ouvrir les alertes</a>
+    <p style="font-size:11px;color:#94a3b8;margin-top:18px">Vous recevez cet email car les notifications sont activées dans votre profil FLEET MANAGER.</p></td></tr>
+</table></td></tr></table></body></html>

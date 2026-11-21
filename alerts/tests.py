@@ -108,3 +108,41 @@ class AlertViewTests(TestCase):
         out = StringIO()
         call_command("generate_alerts", stdout=out)
         self.assertIn("Alertes créées : 1", out.getvalue())
+
+
+class AlertEmailTests(TestCase):
+    def test_digest_sent_once_to_opted_in_staff(self):
+        from django.core import mail
+
+        from alerts.notifications import send_alert_emails
+
+        admin = make_user(User.Role.ADMIN)
+        admin.email = "admin@exemple.bf"
+        admin.save()
+        opted_out = make_user(User.Role.MANAGER)
+        opted_out.email, opted_out.email_alerts = "non@exemple.bf", False
+        opted_out.save()
+        driver_user = make_user(User.Role.DRIVER)
+        driver_user.email = "conducteur@exemple.bf"
+        driver_user.save()
+        insurance(make_vehicle(), -2)   # critique -> envoyée
+        insurance(make_vehicle(), 20)   # attention -> pas d'email
+        generate_alerts()
+        result = send_alert_emails()
+        self.assertEqual(result, {"alerts": 1, "recipients": 1})
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ["admin@exemple.bf"])
+        self.assertIn("Assurance expirée", mail.outbox[0].body)
+        # deuxième passage : rien de nouveau, aucun email
+        self.assertEqual(send_alert_emails()["alerts"], 0)
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_admin_test_email(self):
+        from django.core import mail
+
+        admin = make_user(User.Role.ADMIN)
+        admin.email = "admin@exemple.bf"
+        admin.save()
+        self.client.force_login(admin)
+        self.client.post(reverse("core:email_test"))
+        self.assertEqual(mail.outbox[0].subject, "[FLEET MANAGER] Email de test")

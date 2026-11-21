@@ -24,7 +24,7 @@ class LoginForm(BootstrapFormMixin, AuthenticationForm):
 class ProfileForm(BootstrapFormMixin, forms.ModelForm):
     class Meta:
         model = User
-        fields = ["first_name", "last_name", "email", "phone", "photo"]
+        fields = ["first_name", "last_name", "email", "phone", "photo", "email_alerts"]
         labels = {"first_name": "Prénom", "last_name": "Nom", "email": "Adresse email"}
 
 

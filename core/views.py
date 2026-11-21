@@ -74,6 +74,28 @@ class AppSettingsForm(BootstrapFormMixin, forms.ModelForm):
 
 
 @login_required
+def send_test_email_view(request):
+    """Envoie un email de test à l'administrateur connecté."""
+    from django.conf import settings as dj_settings
+
+    from alerts.notifications import send_test_email
+
+    if request.method != "POST" or not request.user.is_admin:
+        return redirect("core:settings")
+    if not request.user.email:
+        messages.error(request, "Renseignez d'abord votre adresse email dans « Mon profil ».")
+    else:
+        try:
+            send_test_email(request.user)
+        except Exception as exc:  # erreur SMTP : identifiants, réseau…
+            messages.error(request, f"L'envoi a échoué : {exc}. Vérifiez la configuration SMTP.")
+        else:
+            where = "affiché dans la console du serveur" if "console" in dj_settings.EMAIL_BACKEND else f"envoyé à {request.user.email}"
+            messages.success(request, f"Email de test {where}.")
+    return redirect("core:settings")
+
+
+@login_required
 def settings_view(request):
     """Paramètres : modifiables par l'administrateur, consultables par les autres."""
     app_settings = AppSettings.load()
@@ -94,7 +116,13 @@ def settings_view(request):
     if not can_edit:
         for field in form.fields.values():
             field.disabled = True
-    return render(request, "core/settings.html", {"form": form, "can_edit": can_edit, "page_title": "Paramètres"})
+    from django.conf import settings as dj_settings
+
+    email_mode = "console" if "console" in dj_settings.EMAIL_BACKEND else "smtp"
+    return render(request, "core/settings.html", {
+        "form": form, "can_edit": can_edit, "page_title": "Paramètres",
+        "email_mode": email_mode, "email_host": getattr(dj_settings, "EMAIL_HOST", ""),
+    })
 
 
 def error_403(request, exception=None):
