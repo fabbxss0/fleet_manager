@@ -1,12 +1,14 @@
 from django.db.models import Count, Q
-from django.shortcuts import render
+from django.contrib import messages
+from django.http import HttpResponse
+from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
 from core.permissions import StaffRequiredMixin, staff_required
 from core.views_mixins import FilteredListMixin, FormMessagesMixin, PageTitleMixin, SafeDeleteView
 
-from . import costs
+from . import costs, importer
 from .forms import VehicleForm
 from .models import Vehicle
 
@@ -28,6 +30,43 @@ class VehicleListView(StaffRequiredMixin, PageTitleMixin, FilteredListMixin, Lis
         )
         context["status_counts"] = counts
         return context
+
+
+@staff_required
+def vehicle_import_template(request):
+    response = HttpResponse(importer.build_template(),
+                            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response["Content-Disposition"] = 'attachment; filename="modele_import_vehicules.xlsx"'
+    return response
+
+
+@staff_required
+def vehicle_import(request):
+    """Import Excel en deux temps : vérification, puis enregistrement (tout ou rien)."""
+    context = {"page_title": "Importer des véhicules", "max_rows": importer.MAX_ROWS}
+    if request.method == "POST":
+        uploaded = request.FILES.get("fichier")
+        if not uploaded:
+            messages.error(request, "Choisissez un fichier Excel.")
+            return render(request, "vehicles/vehicle_import.html", context)
+        rows, error = importer.parse_workbook(uploaded)
+        if error:
+            messages.error(request, error)
+            return render(request, "vehicles/vehicle_import.html", context)
+        error_count = sum(1 for r in rows if r["errors"])
+        context.update(rows=rows, error_count=error_count, valid_count=len(rows) - error_count,
+                       file_name=uploaded.name)
+        if error_count:
+            messages.error(request, f"{error_count} ligne(s) contiennent des erreurs : aucun véhicule n'a été importé.")
+        elif request.POST.get("action") == "importer":
+            created = importer.import_rows(rows)
+            messages.success(request, f"{len(created)} véhicule(s) importé(s) avec succès.")
+            return redirect("vehicles:list")
+        else:
+            context["ready"] = True
+            messages.info(request, f"Fichier valide : {len(rows)} véhicule(s) prêt(s). Sélectionnez à nouveau le "
+                                   "fichier et cliquez sur « Importer » pour confirmer.")
+    return render(request, "vehicles/vehicle_import.html", context)
 
 
 @staff_required

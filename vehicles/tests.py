@@ -133,3 +133,59 @@ class VehicleCostTests(TestCase):
         make_vehicle()
         self.client.force_login(make_user(User.Role.MANAGER))
         self.assertEqual(self.client.get(reverse("vehicles:costs")).status_code, 200)
+
+
+class VehicleImportTests(TestCase):
+    def _file(self, rows):
+        from io import BytesIO
+
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from openpyxl import Workbook
+
+        from vehicles.importer import COLUMNS
+
+        wb = Workbook()
+        ws = wb.active
+        ws.append([label + (" *" if required else "") for label, _, required, _ in COLUMNS])
+        for row in rows:
+            ws.append(row)
+        buffer = BytesIO()
+        wb.save(buffer)
+        return SimpleUploadedFile("vehicules.xlsx", buffer.getvalue())
+
+    def _row(self, reg, chassis):
+        from datetime import datetime
+
+        return [reg, "Toyota", "Hilux", "Pick-up", "diesel", "Blanc", 2022, chassis, datetime(2023, 3, 15),
+                24500000, 45200, 0, 80, 12, "", "", "31/12/2026", "Logistique", 5, "Manuelle", ""]
+
+    def setUp(self):
+        from accounts.models import User
+        from core.testing import make_user
+
+        self.client.force_login(make_user(User.Role.MANAGER))
+
+    def test_template_downloads(self):
+        response = self.client.get(reverse("vehicles:import_template"))
+        self.assertTrue(response.content.startswith(b"PK"))
+
+    def test_valid_file_imported(self):
+        response = self.client.post(reverse("vehicles:import"), {
+            "action": "importer", "fichier": self._file([self._row("11 IM 0001", "C1"), self._row("11 IM 0002", "C2")])})
+        self.assertRedirects(response, reverse("vehicles:list"))
+        v = Vehicle.objects.get(registration_number="11 IM 0001")
+        self.assertEqual(v.category, "PICKUP")           # libellé « Pick-up » converti en code
+        self.assertEqual(str(v.vignette_expiry_date), "2026-12-31")
+
+    def test_all_or_nothing_on_error(self):
+        make_vehicle(registration_number="11 IM 0009")
+        bad = self._row("11 IM 0009", "C9")              # immatriculation déjà en base
+        response = self.client.post(reverse("vehicles:import"), {
+            "action": "importer", "fichier": self._file([self._row("11 IM 0003", "C3"), bad, self._row("11 IM 0003", "C4")])})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["error_count"], 2)   # doublon base + doublon dans le fichier
+        self.assertFalse(Vehicle.objects.filter(registration_number="11 IM 0003").exists())
+
+    def test_check_only_does_not_save(self):
+        self.client.post(reverse("vehicles:import"), {"action": "verifier", "fichier": self._file([self._row("11 IM 0005", "C5")])})
+        self.assertFalse(Vehicle.objects.filter(registration_number="11 IM 0005").exists())

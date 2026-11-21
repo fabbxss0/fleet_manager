@@ -8,7 +8,8 @@
       <a href="?status={{ value }}" class="fm-chip {% if current_filters.status == value %}active{% endif %}">{{ label }}<span class="n">{{ status_counts|get_item:value }}</span></a>
     {% endfor %}
   </div>
-  <a href="{% url 'vehicles:costs' %}" class="btn btn-light ms-auto"><i class="bi bi-calculator me-1"></i>Coût de revient</a>
+  <a href="{% url 'vehicles:import' %}" class="btn btn-light ms-auto"><i class="bi bi-file-earmark-arrow-up me-1"></i>Importer</a>
+  <a href="{% url 'vehicles:costs' %}" class="btn btn-light"><i class="bi bi-calculator me-1"></i>Coût de revient</a>
   <a href="{% url 'vehicles:create' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Ajouter un véhicule</a>
 </div>
 <div class="card">
