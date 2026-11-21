@@ -18,6 +18,8 @@ from django.utils import timezone
 from accounts.models import User
 from alerts.models import Alert
 from alerts.services import generate_alerts
+from audit.context import audit_disabled
+from audit.models import AuditLog
 from assignments.models import Assignment
 from assignments.services import create_assignment
 from core.models import AppSettings
@@ -83,7 +85,8 @@ class Command(BaseCommand):
         random.seed(2026)
         if Vehicle.objects.exists() and not options["reset"]:
             raise CommandError("La base contient déjà des données. Relancez avec --reset pour les remplacer.")
-        with transaction.atomic():
+        # Le chargement initial n'est pas journalisé : le journal commence vide
+        with transaction.atomic(), audit_disabled():
             if options["reset"]:
                 self._reset()
             self.today = timezone.localdate()
@@ -112,6 +115,7 @@ class Command(BaseCommand):
 
     def _reset(self):
         Alert.objects.all().delete()
+        AuditLog.objects.all().delete()
         FuelEntry.objects.all().delete()
         Assignment.objects.all().delete()
         Maintenance.objects.all().delete()

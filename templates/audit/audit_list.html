@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<p class="text-muted">Toutes les créations, modifications, suppressions et connexions, avec l'auteur, la date et le détail des champs modifiés. Ce journal ne peut pas être modifié.</p>
+<div class="card">
+  <form class="fm-toolbar js-autofilter" method="get">
+    <input type="search" name="q" value="{{ params.q }}" class="form-control fm-filter-search" placeholder="Élément, identifiant…" data-autofocus>
+    <select name="action" class="form-select"><option value="">Toutes les actions</option>
+      {% for v, l in actions %}<option value="{{ v }}" {% if params.action == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+    <select name="type" class="form-select"><option value="">Tous les éléments</option>
+      {% for v, l in types %}<option value="{{ v }}" {% if params.type == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+    <select name="user" class="form-select"><option value="">Tous les utilisateurs</option>
+      {% for u in users %}<option value="{{ u.pk }}" {% if params.user == u.pk|stringformat:"s" %}selected{% endif %}>{{ u.username }}</option>{% endfor %}</select>
+    <input type="date" name="du" value="{{ params.du }}" class="form-control" title="Du">
+    <input type="date" name="au" value="{{ params.au }}" class="form-control" title="Au">
+  </form>
+  <div class="table-responsive"><table class="table">
+    <thead><tr><th>Date</th><th>Utilisateur</th><th>Action</th><th>Élément</th><th>Adresse IP</th></tr></thead>
+    <tbody>
+    {% for entry in object_list %}
+      <tr>
+        <td class="text-nowrap">{{ entry.timestamp|date:"d/m/Y H:i:s" }}</td>
+        <td>{{ entry.username|default:"Système" }}</td>
+        <td><span class="badge badge-soft-{{ entry.action_color }}">{{ entry.get_action_display }}</span></td>
+        <td>{% if entry.model_name %}<span class="cell-sub">{{ entry.model_name }}</span><br>{% endif %}
+          {% with url=entry.target_url %}{% if url %}<a href="{{ url }}" class="fw-semibold">{{ entry.object_repr }}</a>{% else %}<span class="fw-semibold">{{ entry.object_repr }}</span>{% endif %}{% endwith %}
+          {% include "audit/_changes.html" %}</td>
+        <td class="text-muted small">{{ entry.ip_address|default:"—" }}</td>
+      </tr>
+    {% empty %}<tr><td colspan="5">{% include "partials/empty.html" with icon="journal" title="Aucune entrée" text="Aucune action ne correspond à ces critères." %}</td></tr>{% endfor %}
+    </tbody></table></div>
+  {% include "partials/pagination.html" %}
+</div>
+{% endblock %}

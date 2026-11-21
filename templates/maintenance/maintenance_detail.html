@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load fleet_tags %}
+{% load fleet_tags audit_tags %}
 {% block content %}
 {% with m=object %}
 <div class="card mb-3"><div class="card-body d-flex flex-wrap gap-3 align-items-center">
@@ -28,5 +28,6 @@
   {% if m.next_date or m.next_mileage %}<a href="{% url 'maintenance:create' %}?vehicle={{ m.vehicle.pk }}&type={{ m.intervention_type }}" class="btn btn-sm btn-primary mt-2"><i class="bi bi-plus-lg me-1"></i>Enregistrer le prochain entretien</a>{% endif %}
   </div></div></div>
 </div>
+{% audit_history object %}
 {% endwith %}
 {% endblock %}

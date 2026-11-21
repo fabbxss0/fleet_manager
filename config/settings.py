@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "maintenance",
     "insurance",
     "fuel",
+    "audit",
     "alerts",
     "dashboard",
     "reports",
@@ -46,6 +47,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",  # protection CSRF
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "audit.middleware.CurrentUserMiddleware",  # auteur des actions pour le journal d'audit
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     # Rafraîchit automatiquement les alertes (au plus une fois toutes les X minutes)

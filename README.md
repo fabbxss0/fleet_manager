@@ -67,7 +67,7 @@ Réinitialiser les données de démonstration : `python manage.py seed_demo --re
 | `python manage.py runserver` | Démarre le serveur de développement |
 | `python manage.py seed_demo [--reset]` | Données fictives : 15 véhicules, 10 conducteurs, affectations, entretiens, assurances, alertes |
 | `python manage.py generate_alerts` | Vérifie toutes les échéances et crée les alertes manquantes (sans doublon) |
-| `python manage.py test` | Lance les 69 tests automatisés |
+| `python manage.py test` | Lance les 78 tests automatisés |
 | `python manage.py createsuperuser` | Crée un administrateur supplémentaire |
 
 ### Génération des alertes
@@ -99,6 +99,7 @@ fleet_manager/
 ├── maintenance/     Entretiens + services.py (statut du véhicule, échéances, dépenses)
 ├── insurance/       Assurances
 ├── fuel/            Carburant : pleins, consommation (services.py)
+├── audit/           Journal d'audit : signaux, middleware de l'utilisateur courant
 ├── alerts/          Alertes + services.py (moteur de règles) + middleware + commande generate_alerts
 ├── dashboard/       Tableau de bord, statistiques (services.py) et espace conducteur
 ├── reports/         Rapports : services.py (définitions) + exporters.py (PDF et Excel)
@@ -130,6 +131,7 @@ AppSettings (une seule ligne : seuils d'alerte, nom de l'organisation)
 | `fuel_fuelentry` | FK `vehicle` (PROTECT), `driver` (SET_NULL) · litres > 0 · montant calculé · index (vehicle, mileage) |
 | `maintenance_maintenance` | FK `vehicle` (PROTECT) · coût ≥ 0 · index (vehicle, type, date) |
 | `insurance_insurance` | FK `vehicle` (PROTECT) · `policy_number` unique · CHECK expiration > début |
+| `audit_auditlog` | FK `user` (SET_NULL) + copie de l'identifiant · élément visé (`model_label`, `object_id`) · `changes` (JSON avant/après) · ajout seul |
 | `alerts_alert` | FK facultatives vers l'élément concerné (CASCADE) · `dedup_key` **unique parmi les alertes non résolues** |
 | `core_appsettings` | Ligne unique (pk = 1) |
 
@@ -197,6 +199,13 @@ l'alerte passe automatiquement en « résolue » et rejoint l'historique.
 
 ## 7. Sécurité
 
+- **Journal d'audit** (menu Administration, réservé à l'administrateur) : chaque création, modification et
+  suppression de véhicule, conducteur, affectation, entretien, assurance, plein, utilisateur ou paramètre est
+  enregistrée avec l'auteur, la date, l'adresse IP et le détail « avant / après » des champs modifiés.
+  Les connexions, déconnexions et échecs de connexion sont aussi tracés. Les entrées ne peuvent être ni
+  modifiées ni supprimées depuis l'application ; les mots de passe n'y figurent jamais. Chaque fiche
+  (véhicule, conducteur…) affiche son propre « Historique des modifications ».
+
 - Protection CSRF sur tous les formulaires ; suppressions et actions sensibles uniquement en POST.
 - Mots de passe hachés par Django (PBKDF2), validateurs de robustesse (8 caractères minimum, etc.).
 - Contrôle des rôles **côté serveur** sur chaque vue (`core/permissions.py`) : erreur 403 sinon.
@@ -213,7 +222,7 @@ l'alerte passe automatiquement en « résolue » et rejoint l'historique.
 python manage.py test
 ```
 
-69 tests couvrent : ajout de véhicule, unicité de l'immatriculation (formulaire et base), ajout de conducteur,
+78 tests couvrent : ajout de véhicule, unicité de l'immatriculation (formulaire et base), ajout de conducteur,
 affectation, refus de deux affectations actives (service et contrainte SQL), refus d'un véhicule immobilisé /
 en entretien / hors service, validation des dates et kilométrages, génération des alertes (niveaux, absence de
 doublons, résolution, escalade), permissions des trois rôles, calcul des dépenses d'entretien, échéances
@@ -232,6 +241,7 @@ périodiques, tableau de bord et exports PDF / Excel de tous les rapports.
 - **Alertes** : compteur et menu de notifications, page filtrable, lu / non lu, historique des alertes résolues.
 - **Rapports** : 10 rapports, filtre par période, aperçu, export PDF et Excel mis en forme, date de génération.
 - **Utilisateurs** (administrateur) : création, rôles, rattachement à une fiche conducteur, réinitialisation du mot de passe.
+- **Journal d'audit** : traçabilité complète des actions, filtrable par utilisateur, action, type d'élément et période.
 - **Paramètres** : nom de l'organisation et seuils des alertes ; **recherche globale** dans la barre supérieure.
 - Interface responsive (ordinateur, tablette, smartphone).
 

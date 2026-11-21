@@ -26,8 +26,8 @@
 </div>
 
 <div class="row g-3 mb-3">
-  <div class="col-lg-8"><div class="card h-100"><div class="card-header"><i class="bi bi-graph-up"></i> Dépenses mensuelles : entretien et carburant
-    <span class="card-actions small text-muted fw-normal">{% now "Y" %} : entretien <strong class="mx-1 text-dark">{{ kpis.year_expenses|fcfa }}</strong> · carburant <strong class="ms-1 text-dark">{{ kpis.year_fuel|fcfa }}</strong></span></div>
+  <div class="col-lg-8"><div class="card h-100"><div class="card-header"><i class="bi bi-graph-up"></i> Dépenses mensuelles
+    <span class="card-actions small text-muted fw-normal flex-wrap justify-content-end"><span class="text-nowrap">Entretien {% now "Y" %} : <strong class="text-dark">{{ kpis.year_expenses|fcfa }}</strong></span><span class="text-nowrap ms-2">Carburant {% now "Y" %} : <strong class="text-dark">{{ kpis.year_fuel|fcfa }}</strong></span></span></div>
     <div class="card-body"><div class="chart-box"><canvas id="chartMonthly"></canvas></div></div></div></div>
   <div class="col-lg-4"><div class="card h-100"><div class="card-header"><i class="bi bi-pie-chart"></i> Véhicules par statut</div>
     <div class="card-body"><div class="chart-box"><canvas id="chartStatus"></canvas></div></div></div></div>

@@ -1,0 +1,11 @@
+<div class="card mt-3"><div class="card-header"><i class="bi bi-journal-text"></i> Historique des modifications</div>
+  {% for entry in entries %}
+  <div class="alert-item">
+    <span class="badge badge-soft-{{ entry.action_color }} align-self-start">{{ entry.get_action_display }}</span>
+    <div class="flex-grow-1 small">
+      <div><strong>{{ entry.username|default:"Système" }}</strong> <span class="text-muted">· {{ entry.timestamp|date:"d/m/Y à H:i" }}</span></div>
+      {% include "audit/_changes.html" %}
+    </div>
+  </div>
+  {% empty %}<div class="empty-state py-4 small"><i class="bi bi-journal"></i>Aucune modification enregistrée depuis l'activation du journal.</div>{% endfor %}
+</div>

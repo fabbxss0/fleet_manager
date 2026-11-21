@@ -1,0 +1,6 @@
+{% if entry.changes %}
+<details class="small mt-1"><summary class="text-primary" style="cursor:pointer">{{ entry.changes|length }} champ{{ entry.changes|length|pluralize }} — voir le détail</summary>
+  <table class="table table-sm mt-2 mb-0"><thead><tr><th>Champ</th><th>Avant</th><th>Après</th></tr></thead><tbody>
+  {% for field, values in entry.changes.items %}<tr><td class="fw-semibold">{{ field }}</td><td class="text-muted">{{ values.0 }}</td><td>{{ values.1 }}</td></tr>{% endfor %}
+  </tbody></table></details>
+{% endif %}

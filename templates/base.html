@@ -36,6 +36,7 @@
       <div class="fm-nav-label">Administration</div>
       {% if user.is_admin %}
       <a href="{% url 'accounts:user_list' %}" class="{% if ns == 'accounts' and 'user_' in url_name %}active{% endif %}"><i class="bi bi-people"></i> Utilisateurs</a>
+      <a href="{% url 'audit:list' %}" class="{% if ns == 'audit' %}active{% endif %}"><i class="bi bi-journal-text"></i> Journal d'audit</a>
       {% endif %}
     {% else %}
       <div class="fm-nav-label">Mon espace</div>

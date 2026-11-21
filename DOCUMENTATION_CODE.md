@@ -193,6 +193,35 @@ Cela produit **une seule requête SQL** `GROUP BY` au lieu d'une boucle Python s
   qui est imposé par le serveur (son affectation en cours). Même s'il envoie un autre véhicule, il est ignoré
   (vérifié par un test).
 
+## 7 ter. Le journal d'audit
+
+**Fichiers** : `audit/context.py`, `audit/middleware.py`, `audit/signals.py`, `audit/models.py`
+
+Problème : les **signaux** Django (`pre_save`, `post_save`, `post_delete`) se déclenchent à chaque
+enregistrement, mais ils ne reçoivent pas la requête HTTP, donc ne savent pas *qui* agit.
+
+Solution en trois pièces :
+1. `CurrentUserMiddleware` place l'utilisateur et son IP dans une **ContextVar** au début de chaque requête
+   (une variable propre à chaque requête, même si le serveur en traite plusieurs à la fois).
+2. `before_save` (pre_save) relit l'élément en base et en fait une « photo » lisible (`snapshot`) :
+   libellés français, valeurs affichées comme à l'écran (« Immobilisé » plutôt que `IMMOBILISE`).
+3. `after_save` (post_save) refait une photo, compare les deux et n'enregistre **que les champs modifiés**
+   sous la forme `{"Statut": ["Disponible", "Immobilisé"]}` (champ JSON).
+
+Avantage : aucune vue n'a été modifiée. Tout enregistrement passant par `save()` est tracé
+automatiquement, y compris les changements de statut faits par les services métier.
+
+Garanties :
+- `AuditLog.save()` refuse toute modification d'une entrée existante (journal en ajout seul) ;
+  l'interface d'administration Django est en lecture seule.
+- Le nom d'utilisateur est copié : l'entrée reste lisible si le compte est supprimé.
+- `password`, `last_login`… sont exclus (`EXCLUDED_FIELDS`).
+- `audit_disabled()` suspend la journalisation (utilisé par `seed_demo`).
+- Limite connue : `QuerySet.update()` ne déclenche pas les signaux. Les modifications métier passent donc par `save()`.
+
+L'étiquette `{% audit_history object %}` (`audit/templatetags/audit_tags.py`) affiche l'historique sur
+n'importe quelle fiche : c'est une *inclusion tag*, réutilisée sur cinq pages sans dupliquer de HTML.
+
 ## 8. Les formulaires
 
 - `core/forms.py` → `BootstrapFormMixin` ajoute les classes CSS Bootstrap à tous les champs (pas de
@@ -267,4 +296,6 @@ c'est un bon exemple à raconter en soutenance.
 | Comment évitez-vous les alertes en double ? | Clé de déduplication unique parmi les alertes ouvertes. |
 | Les mots de passe sont-ils stockés en clair ? | Non, hachés en PBKDF2 avec sel par `create_user` / `set_password`. |
 | Comment passer à PostgreSQL ? | Changer les variables d'environnement `DB_*` et relancer `migrate` ; le code ne change pas grâce à l'ORM. |
+| Comment savez-vous qui a modifié une fiche ? | Journal d'audit alimenté par les signaux Django ; l'utilisateur vient d'un middleware (ContextVar). |
+| Comment calculez-vous la consommation ? | Méthode du plein à plein : litres d'un plein complet ÷ km depuis le plein précédent × 100. |
 | Un conducteur peut-il voir les données des autres ? | Non : il n'a accès qu'à `driver_space`, filtré sur `request.user.driver_profile`, et reçoit 403 ailleurs. |

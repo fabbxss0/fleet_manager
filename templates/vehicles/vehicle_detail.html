@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load fleet_tags %}
+{% load fleet_tags audit_tags %}
 {% block content %}
 {% with v=object %}
 <div class="card mb-3"><div class="card-body">
@@ -100,5 +100,6 @@
     </div>
   </div>
 </div>
+{% audit_history object %}
 {% endwith %}
 {% endblock %}
