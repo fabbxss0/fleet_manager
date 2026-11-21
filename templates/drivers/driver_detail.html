@@ -31,10 +31,14 @@
     </div></div>
     <div class="card"><div class="card-header"><i class="bi bi-person-lines-fill"></i> Informations</div><div class="card-body">
       <dl class="fm-dl">
+        <dt>Matricule</dt><dd>{{ d.employee_number|default:"—" }}</dd>
+        <dt>Service</dt><dd>{{ d.department|default:"—" }}</dd>
         <dt>Sexe</dt><dd>{{ d.get_gender_display }}</dd>
         <dt>Naissance</dt><dd>{{ d.birth_date|date:"d/m/Y" }}</dd>
         <dt>Adresse</dt><dd>{{ d.address|default:"—" }}</dd>
         <dt>Embauche</dt><dd>{{ d.hire_date|date:"d/m/Y" }}</dd>
+        <dt>Groupe sanguin</dt><dd>{{ d.blood_group|default:"—" }}</dd>
+        <dt>En cas d'urgence</dt><dd>{% if d.emergency_contact_name %}{{ d.emergency_contact_name }}<br><span class="small text-muted">{{ d.emergency_contact_phone }}</span>{% else %}—{% endif %}</dd>
         <dt>Distance totale</dt><dd>{{ total_distance|km }}</dd>
         <dt>Observations</dt><dd>{{ d.notes|default:"—"|linebreaksbr }}</dd>
       </dl>

@@ -53,3 +53,18 @@ class DriverTests(TestCase):
         response = self.client.get(reverse("drivers:list"), {"permis": "expire"})
         self.assertContains(response, expired.last_name)
         self.assertNotContains(response, valid.last_name)
+
+
+class DriverExtraInfoTests(TestCase):
+    def test_employee_number_unique_and_optional(self):
+        base = {"last_name": "A", "first_name": "B", "gender": "M", "birth_date": "1990-01-01", "phone": "1",
+                "license_category": "B", "license_issue_date": "2015-01-01", "license_expiry_date": "2030-01-01",
+                "hire_date": "2020-01-01", "status": "ACTIF"}
+        for n in (1, 2):  # deux conducteurs sans matricule : autorisé
+            form = DriverForm(data={**base, "license_number": f"L{n}", "employee_number": ""})
+            self.assertTrue(form.is_valid(), form.errors)
+            form.save()
+        DriverForm(data={**base, "license_number": "L3", "employee_number": "mat-1"}).save()
+        form = DriverForm(data={**base, "license_number": "L4", "employee_number": "MAT-1"})
+        self.assertFalse(form.is_valid())
+        self.assertIn("employee_number", form.errors)

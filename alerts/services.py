@@ -125,6 +125,25 @@ def maintenance_candidates(cfg):
                         {"maintenance": m, "vehicle": vehicle})
 
 
+def vignette_candidates(cfg):
+    """Vignette / taxe annuelle expirant dans 30 j, dans 7 j, ou dépassée."""
+    today = timezone.localdate()
+    vehicles = Vehicle.objects.exclude(status=Vehicle.Status.OUT_OF_SERVICE).filter(vignette_expiry_date__isnull=False)
+    for vehicle in vehicles:
+        level = _deadline_level((vehicle.vignette_expiry_date - today).days, cfg)
+        if not level:
+            continue
+        suffix, priority = level
+        reg, due = vehicle.registration_number, _fmt(vehicle.vignette_expiry_date)
+        if suffix == "expire":
+            title, desc = f"Vignette expirée — {reg}", f"La vignette (taxe annuelle) a expiré le {due}."
+        else:
+            title, desc = f"Vignette expirant le {due} — {reg}", f"Pensez à payer la vignette avant le {due}."
+        # la date fait partie de la clé : un renouvellement résout l'ancienne alerte
+        key = f"vignette:{vehicle.pk}:{vehicle.vignette_expiry_date:%Y%m%d}:{suffix}"
+        yield Candidate(key, title, desc, C.TAX, priority, {"vehicle": vehicle})
+
+
 def vehicle_candidates(cfg):
     """Véhicules immobilisés."""
     for vehicle in Vehicle.objects.filter(status=Vehicle.Status.IMMOBILIZED):
@@ -164,7 +183,7 @@ def fuel_candidates(cfg):
         )
 
 
-RULES = [insurance_candidates, license_candidates, maintenance_candidates, vehicle_candidates,
+RULES = [insurance_candidates, license_candidates, vignette_candidates, maintenance_candidates, vehicle_candidates,
          assignment_candidates, fuel_candidates]
 
 

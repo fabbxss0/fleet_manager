@@ -28,6 +28,16 @@ class Driver(models.Model):
         SUSPENDED = "SUSPENDU", "Suspendu"
         INACTIVE = "INACTIF", "Inactif"
 
+    class BloodGroup(models.TextChoices):
+        A_POS = "A+", "A+"
+        A_NEG = "A-", "A-"
+        B_POS = "B+", "B+"
+        B_NEG = "B-", "B-"
+        AB_POS = "AB+", "AB+"
+        AB_NEG = "AB-", "AB-"
+        O_POS = "O+", "O+"
+        O_NEG = "O-", "O-"
+
     # Compte utilisateur (rôle Conducteur) permettant d'accéder à l'espace personnel
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL, verbose_name="compte utilisateur", on_delete=models.SET_NULL,
@@ -50,6 +60,14 @@ class Driver(models.Model):
     hire_date = models.DateField("date d'embauche")
     status = models.CharField("statut", max_length=20, choices=Status.choices, default=Status.ACTIVE)
     photo = models.ImageField("photo", upload_to="drivers/", blank=True, null=True, validators=[validate_image_file])
+    employee_number = models.CharField(
+        "matricule", max_length=30, unique=True, null=True, blank=True,
+        error_messages={"unique": "Ce matricule est déjà attribué à un autre conducteur."},
+    )
+    department = models.CharField("service / département", max_length=100, blank=True)
+    blood_group = models.CharField("groupe sanguin", max_length=3, choices=BloodGroup.choices, blank=True)
+    emergency_contact_name = models.CharField("personne à prévenir", max_length=120, blank=True)
+    emergency_contact_phone = models.CharField("téléphone d'urgence", max_length=30, blank=True)
     notes = models.TextField("observations", blank=True)
     created_at = models.DateTimeField("créé le", auto_now_add=True)
     updated_at = models.DateTimeField("modifié le", auto_now=True)

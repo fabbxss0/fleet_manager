@@ -10,6 +10,18 @@ from vehicles.models import Vehicle
 
 
 class Assignment(models.Model):
+    class FuelLevel(models.IntegerChoices):
+        EMPTY = 0, "Réserve"
+        QUARTER = 25, "1/4"
+        HALF = 50, "1/2"
+        THREE_QUARTERS = 75, "3/4"
+        FULL = 100, "Plein"
+
+    class Condition(models.TextChoices):
+        OK = "RAS", "RAS (bon état)"
+        MINOR = "LEGER", "Dommages légers"
+        MAJOR = "IMPORTANT", "Dommages importants"
+
     class Status(models.TextChoices):
         ACTIVE = "EN_COURS", "En cours"
         DONE = "TERMINEE", "Terminée"
@@ -25,6 +37,12 @@ class Assignment(models.Model):
     return_mileage = models.PositiveIntegerField("kilométrage au retour", null=True, blank=True)
     purpose = models.CharField("motif de l'affectation", max_length=200)
     destination = models.CharField("destination", max_length=150, blank=True)
+    start_fuel_level = models.PositiveSmallIntegerField("carburant au départ", choices=FuelLevel.choices,
+                                                        null=True, blank=True)
+    return_fuel_level = models.PositiveSmallIntegerField("carburant au retour", choices=FuelLevel.choices,
+                                                         null=True, blank=True)
+    return_condition = models.CharField("état au retour", max_length=20, choices=Condition.choices, blank=True)
+    damage_notes = models.TextField("description des dommages", blank=True)
     notes = models.TextField("observations", blank=True)
     status = models.CharField("statut", max_length=20, choices=Status.choices, default=Status.ACTIVE)
     created_at = models.DateTimeField("créée le", auto_now_add=True)

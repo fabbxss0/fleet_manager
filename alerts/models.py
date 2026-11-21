@@ -13,6 +13,7 @@ class Alert(models.Model):
         VEHICLE = "VEHICULE", "Véhicule"
         ASSIGNMENT = "AFFECTATION", "Affectation"
         FUEL = "CARBURANT", "Carburant"
+        TAX = "VIGNETTE", "Vignette / taxe"
 
     class Priority(models.IntegerChoices):
         # Valeurs numériques pour pouvoir trier du plus grave au moins grave
@@ -73,5 +74,5 @@ class Alert(models.Model):
     def category_icon(self):
         return {
             "ASSURANCE": "shield-check", "PERMIS": "person-vcard", "ENTRETIEN": "tools",
-            "CONTROLE_TECHNIQUE": "clipboard-check", "VEHICULE": "car-front", "AFFECTATION": "arrow-left-right", "CARBURANT": "fuel-pump",
+            "CONTROLE_TECHNIQUE": "clipboard-check", "VEHICULE": "car-front", "AFFECTATION": "arrow-left-right", "CARBURANT": "fuel-pump", "VIGNETTE": "receipt",
         }.get(self.category, "bell")

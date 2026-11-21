@@ -89,13 +89,17 @@ def assignment_return(request, pk):
     if request.method == "POST":
         if form.is_valid():
             try:
-                services.close_assignment(assignment, form.cleaned_data["return_date"],
-                                          form.cleaned_data["return_mileage"], form.cleaned_data["notes"])
+                cd = form.cleaned_data
+                services.close_assignment(assignment, cd["return_date"], cd["return_mileage"], cd["notes"],
+                                          fuel_level=cd["return_fuel_level"], condition=cd["return_condition"],
+                                          damage_notes=cd["damage_notes"])
             except ValidationError as exc:
                 form.add_error(None, exc.messages)
             else:
                 messages.success(request, f"Retour enregistré. Statut du véhicule : "
                                           f"{assignment.vehicle.get_status_display()}.")
+                if cd["return_condition"] != "RAS":
+                    messages.warning(request, "Des dommages ont été signalés : pensez à déclarer un sinistre.")
                 return redirect(assignment.get_absolute_url())
         messages.error(request, "Le retour n'a pas pu être enregistré. Vérifiez les champs signalés.")
     return render(request, "assignments/assignment_return.html", {

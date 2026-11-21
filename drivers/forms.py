@@ -11,8 +11,13 @@ class DriverForm(BootstrapFormMixin, forms.ModelForm):
         fields = [
             "last_name", "first_name", "gender", "birth_date", "phone", "email", "address",
             "license_number", "license_category", "license_issue_date", "license_expiry_date",
-            "hire_date", "status", "photo", "notes",
+            "hire_date", "status", "photo", "notes", "employee_number", "department", "blood_group",
+            "emergency_contact_name", "emergency_contact_phone",
         ]
+
+    def clean_employee_number(self):
+        value = (self.cleaned_data.get("employee_number") or "").strip().upper()
+        return value or None  # vide = pas de matricule (NULL n'entre pas en conflit d'unicité)
 
     def clean_license_number(self):
         return self.cleaned_data["license_number"].strip().upper()

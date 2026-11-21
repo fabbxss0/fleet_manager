@@ -132,3 +132,23 @@ class AssignmentViewTests(TestCase):
         })
         self.assertEqual(response.status_code, 200)
         self.assertFalse(Assignment.objects.exists())
+
+
+class ReturnConditionTests(TestCase):
+    def test_damage_requires_description(self):
+        from assignments.forms import AssignmentReturnForm
+
+        vehicle, driver = make_vehicle(insured=True, mileage=1000), make_driver()
+        assignment = create_assignment(new_assignment(vehicle, driver))
+        form = AssignmentReturnForm(data={"return_date": today().isoformat(), "return_mileage": 1200,
+                                          "return_condition": "IMPORTANT"}, assignment=assignment)
+        self.assertFalse(form.is_valid())
+        self.assertIn("damage_notes", form.errors)
+
+    def test_fuel_and_condition_saved(self):
+        vehicle, driver = make_vehicle(insured=True, mileage=1000), make_driver()
+        assignment = create_assignment(new_assignment(vehicle, driver, start_fuel_level=100))
+        close_assignment(assignment, today(), 1300, fuel_level=25, condition="LEGER", damage_notes="Rayure")
+        assignment.refresh_from_db()
+        self.assertEqual(assignment.get_return_fuel_level_display(), "1/4")
+        self.assertEqual(assignment.return_condition, "LEGER")

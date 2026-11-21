@@ -67,6 +67,7 @@ DRIVERS = [
 
 GARAGES = ["Garage Central Auto", "Atelier Mécanique du Kadiogo", "Auto Service Plus", "Pneus Express",
            "Électro-Auto Diagnostic", "Centre de Contrôle Technique Agréé"]
+DEPARTMENTS = ["Direction générale", "Logistique", "Commercial", "Technique", "Ressources humaines"]
 COMPANIES = ["Sonar Assurances", "Allianz Burkina", "Jackson Assurances", "Coris Assurances", "UAB Assurances"]
 PURPOSES = [("Mission de supervision", "Koudougou"), ("Livraison de matériel", "Bobo-Dioulasso"),
             ("Accompagnement de la direction", "Ouagadougou"), ("Tournée commerciale", "Ouahigouya"),
@@ -134,6 +135,14 @@ class Command(BaseCommand):
                 year=year, chassis_number=f"DEMO{year}{i:03d}X{random.randint(100000, 999999)}",
                 acquisition_date=acquisition, acquisition_price=Decimal(price), mileage=km - 4000,
                 tank_capacity=tank, fiscal_power=cv, notes="Véhicule de démonstration.",
+                registration_card_number=f"CG-{year}-{4500 + i * 13}",
+                first_registration_date=max(acquisition - timedelta(days=20), self.today.replace(year=year, month=1, day=2)),
+                # échéances de vignette : la plupart lointaines, une proche et une dépassée
+                vignette_expiry_date=self.today + timedelta(days=[120, 200, 18, 90, 150, 240, 60, 300, 100, -15, 180, 210, 75, 280, 330][i]),
+                department=DEPARTMENTS[i % len(DEPARTMENTS)],
+                seats={"MOTO": 2, "MINIBUS": 18, "CAMION": 3, "CAMIONNETTE": 3}.get(cat, 5),
+                transmission="AUTOMATIQUE" if brand in ("Hyundai", "Peugeot") else ("" if cat == "MOTO" else "MANUELLE"),
+                acquisition_mileage=0 if year >= self.today.year - 3 else 12 + i * 7,
             ))
         return vehicles
 
@@ -150,6 +159,10 @@ class Command(BaseCommand):
                 license_expiry_date=expiry, hire_date=self.today - timedelta(days=400 + i * 150),
                 status=Driver.Status.INACTIVE if i == 8 else Driver.Status.ACTIVE,
                 notes="Conducteur fictif (démonstration).",
+                employee_number=f"MAT-{2015 + i}-{100 + i:03d}", department=DEPARTMENTS[i % len(DEPARTMENTS)],
+                blood_group=["O+", "A+", "B+", "O-", "AB+", "A-", "O+", "B-", "A+", "O+"][i],
+                emergency_contact_name=f"Contact d'urgence {i + 1} (fictif)",
+                emergency_contact_phone=f"+226 76 00 {i:02d} {20 + i:02d}",
             ))
         return drivers
 
@@ -246,6 +259,9 @@ class Command(BaseCommand):
                 actual_return_date=start + timedelta(days=duration + (1 if n % 4 == 0 else 0)),
                 start_mileage=vehicle.mileage - 3800 + n * 10, return_mileage=vehicle.mileage - 3800 + n * 10 + distance,
                 purpose=purpose, destination=destination, status=Assignment.Status.DONE,
+                start_fuel_level=100, return_fuel_level=[25, 50, 75, 25][n % 4],
+                return_condition="LEGER" if n == 5 else "RAS",
+                damage_notes="Rayure sur la portière arrière gauche." if n == 5 else "",
             )
         Assignment.objects.create(
             vehicle=vehicles[4], driver=drivers[7], start_date=self.today - timedelta(days=60),
@@ -262,7 +278,7 @@ class Command(BaseCommand):
             vehicle = Vehicle.objects.get(pk=vehicles[v_index].pk)
             create_assignment(Assignment(
                 vehicle=vehicle, driver=drivers[d_index], start_date=self.today - timedelta(days=days_ago),
-                expected_end_date=self.today + timedelta(days=end_in), start_mileage=vehicle.mileage,
+                expected_end_date=self.today + timedelta(days=end_in), start_mileage=vehicle.mileage, start_fuel_level=100,
                 purpose=purpose, destination=destination,
             ))
 

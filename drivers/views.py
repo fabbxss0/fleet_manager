@@ -16,7 +16,7 @@ class DriverListView(StaffRequiredMixin, PageTitleMixin, FilteredListMixin, List
     model = Driver
     template_name = "drivers/driver_list.html"
     page_title = "Conducteurs"
-    search_fields = ("last_name", "first_name", "license_number", "phone", "email")
+    search_fields = ("last_name", "first_name", "license_number", "phone", "email", "employee_number", "department")
     filter_fields = ("status", "license_category")
 
     def get_queryset(self):

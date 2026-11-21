@@ -58,7 +58,8 @@ def create_assignment(assignment):
 
 
 @transaction.atomic
-def close_assignment(assignment, return_date, return_mileage, notes=""):
+def close_assignment(assignment, return_date, return_mileage, notes="", fuel_level=None,
+                     condition="", damage_notes=""):
     """Enregistre le retour du véhicule et met fin à l'affectation."""
     if assignment.status != Assignment.Status.ACTIVE:
         raise ValidationError("Seule une affectation en cours peut être clôturée.")
@@ -66,6 +67,9 @@ def close_assignment(assignment, return_date, return_mileage, notes=""):
     assignment.return_mileage = return_mileage
     if notes:
         assignment.notes = f"{assignment.notes}\n{notes}".strip()
+    assignment.return_fuel_level = fuel_level
+    assignment.return_condition = condition
+    assignment.damage_notes = damage_notes
     assignment.status = Assignment.Status.DONE
     assignment.full_clean()
     assignment.save()

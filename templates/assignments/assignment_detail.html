@@ -26,10 +26,13 @@
     <dt>Km au départ</dt><dd>{{ a.start_mileage|km }}</dd>
     <dt>Km au retour</dt><dd>{{ a.return_mileage|km }}</dd>
     <dt>Distance parcourue</dt><dd class="fw-bold">{{ a.distance|km }}</dd>
+    <dt>Carburant départ / retour</dt><dd>{{ a.get_start_fuel_level_display|default:"—" }} / {{ a.get_return_fuel_level_display|default:"—" }}</dd>
   </dl></div></div></div>
   <div class="col-lg-6"><div class="card h-100"><div class="card-header"><i class="bi bi-geo-alt"></i> Mission</div><div class="card-body"><dl class="fm-dl">
     <dt>Motif</dt><dd>{{ a.purpose }}</dd>
     <dt>Destination</dt><dd>{{ a.destination|default:"—" }}</dd>
+    <dt>État au retour</dt><dd>{% if a.return_condition %}<span class="badge {% if a.return_condition == 'RAS' %}badge-soft-success{% elif a.return_condition == 'LEGER' %}badge-soft-warning{% else %}badge-soft-danger{% endif %}">{{ a.get_return_condition_display }}</span>{% else %}—{% endif %}</dd>
+    {% if a.damage_notes %}<dt>Dommages</dt><dd>{{ a.damage_notes|linebreaksbr }}</dd>{% endif %}
     <dt>Observations</dt><dd>{{ a.notes|default:"—"|linebreaksbr }}</dd>
   </dl></div></div></div>
 </div>

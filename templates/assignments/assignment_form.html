@@ -18,7 +18,8 @@
   <div class="fm-form-section"><h6><i class="bi bi-calendar-range"></i> Période et kilométrage</h6><div class="row">
     {% if form.start_date %}{% include "partials/field.html" with field=form.start_date col="col-md-4" %}{% endif %}
     {% include "partials/field.html" with field=form.expected_end_date col="col-md-4" %}
-    {% if form.start_mileage %}{% include "partials/field.html" with field=form.start_mileage col="col-md-4" %}{% endif %}
+    {% if form.start_mileage %}{% include "partials/field.html" with field=form.start_mileage col="col-md-4" %}
+    {% include "partials/field.html" with field=form.start_fuel_level col="col-md-4" %}{% endif %}
   </div></div>
   <div class="fm-form-section"><h6><i class="bi bi-geo-alt"></i> Mission</h6><div class="row">
     {% include "partials/field.html" with field=form.purpose %}

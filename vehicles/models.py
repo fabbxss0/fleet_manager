@@ -37,6 +37,10 @@ class Vehicle(models.Model):
         IMMOBILIZED = "IMMOBILISE", "Immobilisé"
         OUT_OF_SERVICE = "HORS_SERVICE", "Hors service"
 
+    class Transmission(models.TextChoices):
+        MANUAL = "MANUELLE", "Manuelle"
+        AUTOMATIC = "AUTOMATIQUE", "Automatique"
+
     # Statuts empêchant toute nouvelle affectation
     NON_ASSIGNABLE_STATUSES = (Status.MAINTENANCE, Status.IMMOBILIZED, Status.OUT_OF_SERVICE)
 
@@ -65,6 +69,19 @@ class Vehicle(models.Model):
     fiscal_power = models.PositiveIntegerField("puissance fiscale (CV)", null=True, blank=True)
     photo = models.ImageField("photo", upload_to="vehicles/", blank=True, null=True, validators=[validate_image_file])
     status = models.CharField("statut", max_length=20, choices=Status.choices, default=Status.AVAILABLE)
+    # --- Informations administratives
+    registration_card_number = models.CharField("n° de carte grise", max_length=40, blank=True)
+    first_registration_date = models.DateField("date de mise en circulation", null=True, blank=True)
+    vignette_expiry_date = models.DateField(
+        "échéance de la vignette / taxe annuelle", null=True, blank=True,
+        help_text="Une alerte est générée à l'approche de cette date.",
+    )
+    department = models.CharField("service / département", max_length=100, blank=True)
+    seats = models.PositiveSmallIntegerField("nombre de places", null=True, blank=True)
+    transmission = models.CharField("boîte de vitesses", max_length=20, choices=Transmission.choices, blank=True)
+    acquisition_mileage = models.PositiveIntegerField(
+        "kilométrage à l'acquisition", default=0, help_text="Sert au calcul du coût de revient au kilomètre."
+    )
     notes = models.TextField("observations", blank=True)
     created_at = models.DateTimeField("créé le", auto_now_add=True)
     updated_at = models.DateTimeField("modifié le", auto_now=True)

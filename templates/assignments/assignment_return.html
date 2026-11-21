@@ -14,6 +14,9 @@
   <div class="fm-form-section"><div class="row">
     {% include "partials/field.html" with field=form.return_date %}
     {% include "partials/field.html" with field=form.return_mileage %}
+    {% include "partials/field.html" with field=form.return_fuel_level %}
+    {% include "partials/field.html" with field=form.return_condition %}
+    {% include "partials/field.html" with field=form.damage_notes col="col-12" %}
     {% include "partials/field.html" with field=form.notes col="col-12" %}
   </div></div>
   <div class="fm-form-actions">

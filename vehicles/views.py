@@ -13,7 +13,7 @@ class VehicleListView(StaffRequiredMixin, PageTitleMixin, FilteredListMixin, Lis
     model = Vehicle
     template_name = "vehicles/vehicle_list.html"
     page_title = "Véhicules"
-    search_fields = ("registration_number", "brand", "model")
+    search_fields = ("registration_number", "brand", "model", "department", "registration_card_number")
     filter_fields = ("category", "status", "fuel_type")
 
     def get_context_data(self, **kwargs):

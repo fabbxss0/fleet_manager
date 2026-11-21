@@ -68,3 +68,30 @@ class VehicleTests(TestCase):
         self.assertEqual(self.client.get(reverse("vehicles:delete", args=[vehicle.pk])).status_code, 405)
         self.client.post(reverse("vehicles:delete", args=[vehicle.pk]))
         self.assertFalse(Vehicle.objects.filter(pk=vehicle.pk).exists())
+
+
+class VehicleExtraInfoTests(TestCase):
+    def test_acquisition_mileage_cannot_exceed_current(self):
+        form = VehicleForm(data={
+            "registration_number": "11 XX 0001", "brand": "Toyota", "model": "Corolla", "category": "BERLINE",
+            "fuel_type": "ESSENCE", "year": 2022, "chassis_number": "X1", "acquisition_date": "2023-01-10",
+            "acquisition_price": 1, "mileage": 1000, "acquisition_mileage": 5000, "status": "DISPONIBLE",
+        })
+        self.assertFalse(form.is_valid())
+        self.assertIn("acquisition_mileage", form.errors)
+
+    def test_vignette_alert_and_renewal(self):
+        from datetime import timedelta
+
+        from alerts.models import Alert
+        from alerts.services import generate_alerts
+
+        vehicle = make_vehicle(vignette_expiry_date=today() + timedelta(days=5))
+        generate_alerts()
+        alert = Alert.objects.get(category=Alert.Category.TAX)
+        self.assertEqual(alert.priority, Alert.Priority.URGENT)
+        vehicle.vignette_expiry_date = today() + timedelta(days=365)
+        vehicle.save()
+        generate_alerts()
+        alert.refresh_from_db()
+        self.assertTrue(alert.is_resolved)

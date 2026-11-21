@@ -20,7 +20,8 @@ class AssignmentCreateForm(BootstrapFormMixin, forms.ModelForm):
 
     class Meta:
         model = Assignment
-        fields = ["vehicle", "driver", "start_date", "expected_end_date", "start_mileage", "purpose", "destination", "notes"]
+        fields = ["vehicle", "driver", "start_date", "expected_end_date", "start_mileage", "start_fuel_level",
+                  "purpose", "destination", "notes"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -63,6 +64,12 @@ class AssignmentUpdateForm(BootstrapFormMixin, forms.ModelForm):
 class AssignmentReturnForm(BootstrapFormMixin, forms.Form):
     return_date = forms.DateField(label="Date de retour effective")
     return_mileage = forms.IntegerField(label="Kilométrage au retour", min_value=0)
+    return_fuel_level = forms.TypedChoiceField(label="Carburant au retour", coerce=int, required=False, empty_value=None,
+                                               choices=[("", "—")] + list(Assignment.FuelLevel.choices))
+    return_condition = forms.ChoiceField(label="État du véhicule au retour", choices=Assignment.Condition.choices,
+                                         initial=Assignment.Condition.OK, required=False)
+    damage_notes = forms.CharField(label="Description des dommages", required=False, widget=forms.Textarea,
+                                   help_text="Obligatoire si des dommages sont constatés.")
     notes = forms.CharField(label="Observations sur le retour", required=False, widget=forms.Textarea)
 
     def __init__(self, *args, assignment, **kwargs):
@@ -79,6 +86,14 @@ class AssignmentReturnForm(BootstrapFormMixin, forms.Form):
                 f"({self.assignment.start_mileage} km)."
             )
         return mileage
+
+    def clean(self):
+        data = super().clean()
+        data["return_condition"] = data.get("return_condition") or Assignment.Condition.OK
+        if data.get("return_condition") in (Assignment.Condition.MINOR, Assignment.Condition.MAJOR) \
+                and not data.get("damage_notes", "").strip():
+            self.add_error("damage_notes", "Décrivez les dommages constatés.")
+        return data
 
     def clean_return_date(self):
         date = self.cleaned_data["return_date"]

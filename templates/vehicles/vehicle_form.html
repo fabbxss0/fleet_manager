@@ -21,6 +21,15 @@
     {% include "partials/field.html" with field=form.fiscal_power col="col-md-4" %}
     {% include "partials/field.html" with field=form.status col="col-md-4" %}
   </div></div>
+  <div class="fm-form-section"><h6><i class="bi bi-folder2-open"></i> Informations administratives</h6><div class="row">
+    {% include "partials/field.html" with field=form.registration_card_number col="col-md-4" %}
+    {% include "partials/field.html" with field=form.first_registration_date col="col-md-4" %}
+    {% include "partials/field.html" with field=form.vignette_expiry_date col="col-md-4" %}
+    {% include "partials/field.html" with field=form.department col="col-md-4" %}
+    {% include "partials/field.html" with field=form.seats col="col-md-2" %}
+    {% include "partials/field.html" with field=form.transmission col="col-md-3" %}
+    {% include "partials/field.html" with field=form.acquisition_mileage col="col-md-3" %}
+  </div></div>
   <div class="fm-form-section"><h6><i class="bi bi-image"></i> Photo et observations</h6><div class="row">
     {% include "partials/field.html" with field=form.photo col="col-md-6" %}
     {% include "partials/field.html" with field=form.notes col="col-md-6" %}

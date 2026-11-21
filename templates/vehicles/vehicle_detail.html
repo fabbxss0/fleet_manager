@@ -41,11 +41,18 @@
     <div class="card mb-3"><div class="card-header"><i class="bi bi-info-circle"></i> Fiche technique</div><div class="card-body">
       <dl class="fm-dl">
         <dt>N° de châssis</dt><dd class="text-break">{{ v.chassis_number }}</dd>
+        <dt>Carte grise</dt><dd>{{ v.registration_card_number|default:"—" }}</dd>
+        <dt>Mise en circulation</dt><dd>{{ v.first_registration_date|date:"d/m/Y"|default:"—" }}</dd>
+        <dt>Vignette / taxe</dt><dd>{% if v.vignette_expiry_date %}{{ v.vignette_expiry_date|date:"d/m/Y" }}{% else %}—{% endif %}</dd>
+        <dt>Service</dt><dd>{{ v.department|default:"—" }}</dd>
+        <dt>Places</dt><dd>{{ v.seats|default:"—" }}</dd>
+        <dt>Boîte de vitesses</dt><dd>{{ v.get_transmission_display|default:"—" }}</dd>
         <dt>Couleur</dt><dd>{{ v.color|default:"—" }}</dd>
         <dt>Puissance fiscale</dt><dd>{% if v.fiscal_power %}{{ v.fiscal_power }} CV{% else %}—{% endif %}</dd>
         <dt>Réservoir</dt><dd>{% if v.tank_capacity %}{{ v.tank_capacity }} L{% else %}—{% endif %}</dd>
         <dt>Acquisition</dt><dd>{{ v.acquisition_date|date:"d/m/Y" }}</dd>
         <dt>Prix d'acquisition</dt><dd>{{ v.acquisition_price|fcfa }}</dd>
+        <dt>Km à l'acquisition</dt><dd>{{ v.acquisition_mileage|km }}</dd>
         <dt>Observations</dt><dd>{{ v.notes|default:"—"|linebreaksbr }}</dd>
       </dl>
     </div></div>
