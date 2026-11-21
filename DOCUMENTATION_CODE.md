@@ -286,6 +286,70 @@ Pendant le développement, ces tests ont révélé de vrais bugs, corrigés depu
 dans une copie périmée en mémoire, calcul des 12 derniers mois qui oubliait le mois en cours) :
 c'est un bon exemple à raconter en soutenance.
 
+## 13 bis. Les fonctionnalités de la version 3
+
+### Statut « lu » propre à chaque utilisateur (`alerts/models.py`)
+
+Au départ, `Alert.is_read` était un simple booléen : quand le gestionnaire lisait une alerte, elle
+devenait lue pour tout le monde. On a remplacé ce champ par une **table d'association** `AlertRead`
+(alerte, utilisateur, date) : une relation *plusieurs-à-plusieurs* entre alertes et utilisateurs.
+
+```python
+def with_read_state(self, user):
+    return self.annotate(is_read=Exists(AlertRead.objects.filter(alert=OuterRef("pk"), user=user)))
+```
+
+`Exists` + `OuterRef` ajoutent l'attribut `is_read` **calculé par la base** pour l'utilisateur connecté
+(une sous-requête SQL `EXISTS`). Les templates n'ont presque pas changé, car ils lisent toujours
+`alerte.is_read`. La migration `0005` contient une étape `RunPython` qui recopie les lectures existantes
+avant de supprimer l'ancien champ : on n'a perdu aucune donnée.
+
+### Sinistres (`claims/services.py`)
+
+`save_claim()` retrouve automatiquement l'affectation en cours et la police d'assurance valide **à la
+date du sinistre** (pas aujourd'hui). La requête combine deux conditions avec `Q(...) | Q(...)` : affectation
+encore en cours, ou retour postérieur à la date du sinistre. Le *reste à charge* est une propriété
+calculée (`net_cost`) : il n'est pas stocké, il ne peut donc jamais être incohérent.
+
+### Coût de revient (`vehicles/costs.py`)
+
+Chaque poste est une agrégation `Sum` en base. Le coût au km utilise le champ `acquisition_mileage`, sans
+lequel on diviserait par des kilomètres parcourus avant l'achat. Le seuil « à étudier » (30 % du prix
+d'achat par an) est une constante nommée `REVIEW_RATIO` : facile à justifier et à modifier.
+
+### Planning (`assignments/planning.py` + `templates/assignments/planning.html`)
+
+Aucune bibliothèque de calendrier : une **grille CSS** (`display: grid`) avec une colonne par jour.
+Le service transforme chaque affectation en « segment » (`col` = colonne de début, `span` = nombre de jours),
+coupé aux bornes du mois par `_segment()`. Le template place la barre avec
+`grid-column: {{ col }} / span {{ span }}`. Un retard est prolongé jusqu'à aujourd'hui et coloré en rouge.
+
+### Notifications email (`alerts/notifications.py`)
+
+- Destinataires : administrateurs et gestionnaires actifs, avec email, et qui l'acceptent (`email_alerts`).
+- Alertes envoyées : urgentes et critiques, jamais envoyées (`emailed_at` vide), puis datées. Un renvoi est impossible.
+- `EmailMultiAlternatives` envoie une version texte **et** HTML ; un email par destinataire pour ne pas
+  dévoiler les adresses des autres.
+- Le moyen d'envoi est choisi dans `settings.py` : console par défaut, SMTP si `EMAIL_HOST` est défini.
+  Pendant les tests, Django utilise automatiquement une boîte mémoire (`mail.outbox`), ce qui permet de vérifier
+  les emails sans rien envoyer.
+
+### Import Excel (`vehicles/importer.py`)
+
+Point clé à défendre : **chaque ligne est validée par le même `VehicleForm` que la saisie manuelle**. Les règles
+(immatriculation unique, kilométrage, dates…) ne sont donc écrites qu'une fois. Les libellés Excel
+(« Pick-up ») sont convertis en codes (`PICKUP`), et les doublons *à l'intérieur du fichier* sont aussi détectés.
+`import_rows()` est décoré par `@transaction.atomic` et n'est appelé que s'il n'y a aucune erreur : c'est
+l'import « tout ou rien ».
+
+### Mise en production (`config/settings.py`, `.env.example`, `DEPLOIEMENT.md`)
+
+- `load_env_file()` lit un fichier `.env` (sans bibliothèque externe) ; les secrets ne sont jamais dans le code
+  ni sur GitHub (`.gitignore`).
+- Si `DEBUG` est désactivé sans clé secrète, l'application **refuse de démarrer** (`ImproperlyConfigured`) plutôt
+  que de tourner avec une clé connue de tous.
+- `python manage.py check --deploy` vérifie la configuration de sécurité.
+
 ## 14. Questions probables et éléments de réponse
 
 | Question | Réponse courte |
@@ -297,5 +361,8 @@ c'est un bon exemple à raconter en soutenance.
 | Les mots de passe sont-ils stockés en clair ? | Non, hachés en PBKDF2 avec sel par `create_user` / `set_password`. |
 | Comment passer à PostgreSQL ? | Changer les variables d'environnement `DB_*` et relancer `migrate` ; le code ne change pas grâce à l'ORM. |
 | Comment savez-vous qui a modifié une fiche ? | Journal d'audit alimenté par les signaux Django ; l'utilisateur vient d'un middleware (ContextVar). |
+| Pourquoi une table AlertRead plutôt qu'un booléen ? | Le statut « lu » dépend de l'utilisateur : c'est une relation plusieurs-à-plusieurs entre alertes et utilisateurs. |
+| Comment éviter qu'un import Excel corrompe la base ? | Validation de chaque ligne par le formulaire de saisie, puis enregistrement dans une transaction, seulement si tout est valide. |
+| Comment ne pas envoyer deux fois le même email ? | Le champ `emailed_at` marque les alertes déjà envoyées. |
 | Comment calculez-vous la consommation ? | Méthode du plein à plein : litres d'un plein complet ÷ km depuis le plein précédent × 100. |
 | Un conducteur peut-il voir les données des autres ? | Non : il n'a accès qu'à `driver_space`, filtré sur `request.user.driver_profile`, et reçoit 403 ailleurs. |
