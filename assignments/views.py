@@ -79,6 +79,21 @@ class AssignmentUpdateView(StaffRequiredMixin, PageTitleMixin, FormMessagesMixin
 
 
 @staff_required
+def assignment_planning(request):
+    """Planning mensuel : qui utilise quel véhicule, et quand."""
+    from vehicles.models import Vehicle
+
+    from .planning import build_planning, parse_month
+
+    category = request.GET.get("category", "")
+    planning = build_planning(parse_month(request.GET.get("mois")), category)
+    return render(request, "assignments/planning.html", {
+        "page_title": "Planning du parc", "planning": planning, "category": category,
+        "categories": Vehicle.Category.choices,
+    })
+
+
+@staff_required
 def assignment_return(request, pk):
     """Enregistrement du retour du véhicule (clôture de l'affectation)."""
     assignment = get_object_or_404(Assignment.objects.select_related("vehicle", "driver"), pk=pk)

@@ -9,7 +9,8 @@
     <a href="?status=TERMINEE" class="fm-chip {% if current_filters.status == 'TERMINEE' %}active{% endif %}">Terminées</a>
     <a href="?status=ANNULEE" class="fm-chip {% if current_filters.status == 'ANNULEE' %}active{% endif %}">Annulées</a>
   </div>
-  <a href="{% url 'assignments:create' %}" class="btn btn-primary ms-auto"><i class="bi bi-plus-lg me-1"></i>Nouvelle affectation</a>
+  <a href="{% url 'assignments:planning' %}" class="btn btn-light ms-auto"><i class="bi bi-calendar3 me-1"></i>Planning</a>
+  <a href="{% url 'assignments:create' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Nouvelle affectation</a>
 </div>
 <div class="card">
   <form class="fm-toolbar js-autofilter" method="get">

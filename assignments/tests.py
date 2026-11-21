@@ -152,3 +152,28 @@ class ReturnConditionTests(TestCase):
         assignment.refresh_from_db()
         self.assertEqual(assignment.get_return_fuel_level_display(), "1/4")
         self.assertEqual(assignment.return_condition, "LEGER")
+
+
+class PlanningTests(TestCase):
+    def test_segments_clipped_to_month(self):
+        from datetime import date
+
+        from assignments.planning import build_planning
+
+        vehicle, driver = make_vehicle(), make_driver()
+        Assignment.objects.create(vehicle=vehicle, driver=driver, start_date=date(2026, 3, 28),
+                                  expected_end_date=date(2026, 4, 3), actual_return_date=date(2026, 4, 3),
+                                  return_mileage=vehicle.mileage + 10, start_mileage=vehicle.mileage, purpose="x",
+                                  status=Assignment.Status.DONE)
+        april = build_planning(date(2026, 4, 1))
+        row = next(r for r in april["rows"] if r["vehicle"] == vehicle)
+        self.assertEqual(row["segments"][0]["col"], 2)    # 1er avril = 1re colonne de jours
+        self.assertEqual(row["segments"][0]["span"], 3)   # 1er, 2 et 3 avril
+        self.assertEqual(april["days_in_month"], 30)
+        self.assertEqual(april["prev"], "2026-03")
+
+    def test_planning_page(self):
+        self.client.force_login(make_user(User.Role.MANAGER))
+        response = self.client.get(reverse("assignments:planning"), {"mois": "2026-02"})
+        self.assertContains(response, "Février 2026")
+        self.assertEqual(self.client.get(reverse("assignments:planning"), {"mois": "n'importe"}).status_code, 200)

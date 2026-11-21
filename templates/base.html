@@ -27,7 +27,8 @@
       <div class="fm-nav-label">Parc automobile</div>
       <a href="{% url 'vehicles:list' %}" class="{% if ns == 'vehicles' %}active{% endif %}"><i class="bi bi-car-front"></i> Véhicules</a>
       <a href="{% url 'drivers:list' %}" class="{% if ns == 'drivers' %}active{% endif %}"><i class="bi bi-person-badge"></i> Conducteurs</a>
-      <a href="{% url 'assignments:list' %}" class="{% if ns == 'assignments' %}active{% endif %}"><i class="bi bi-arrow-left-right"></i> Affectations</a>
+      <a href="{% url 'assignments:list' %}" class="{% if ns == 'assignments' and url_name != 'planning' %}active{% endif %}"><i class="bi bi-arrow-left-right"></i> Affectations</a>
+      <a href="{% url 'assignments:planning' %}" class="{% if url_name == 'planning' %}active{% endif %}"><i class="bi bi-calendar3"></i> Planning</a>
       <a href="{% url 'maintenance:list' %}" class="{% if ns == 'maintenance' %}active{% endif %}"><i class="bi bi-tools"></i> Entretiens</a>
       <a href="{% url 'insurance:list' %}" class="{% if ns == 'insurance' %}active{% endif %}"><i class="bi bi-shield-check"></i> Assurances</a>
       <a href="{% url 'fuel:list' %}" class="{% if ns == 'fuel' %}active{% endif %}"><i class="bi bi-fuel-pump"></i> Carburant</a>
