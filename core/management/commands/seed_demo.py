@@ -105,9 +105,9 @@ class Command(BaseCommand):
             self._create_claims(vehicles)
         result = generate_alerts()
         # Quelques alertes d'information déjà lues, pour montrer les deux états
+        admin = User.objects.get(username="admin")
         for alert in Alert.objects.filter(priority=Alert.Priority.INFO)[:2]:
-            alert.is_read = True
-            alert.save(update_fields=["is_read"])
+            alert.mark_read(admin)  # lues par l'administrateur seulement
         self.stdout.write(self.style.SUCCESS(
             f"Données créées : {Vehicle.objects.count()} véhicules, {Driver.objects.count()} conducteurs, "
             f"{Assignment.objects.count()} affectations, {Maintenance.objects.count()} entretiens, "

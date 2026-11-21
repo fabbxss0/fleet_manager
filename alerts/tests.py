@@ -76,14 +76,28 @@ class AlertViewTests(TestCase):
         make_vehicle(status=Vehicle.Status.IMMOBILIZED)
         generate_alerts()
         alert = Alert.objects.get()
-        self.client.force_login(make_user(User.Role.MANAGER))
+        manager, admin = make_user(User.Role.MANAGER), make_user(User.Role.ADMIN)
+        self.client.force_login(manager)
         response = self.client.get(reverse("alerts:list"))
         self.assertEqual(response.context["unread_alerts_count"], 1)
         self.client.post(reverse("alerts:toggle_read", args=[alert.pk]))
-        alert.refresh_from_db()
-        self.assertTrue(alert.is_read)
+        self.assertTrue(alert.is_read_by(manager))
         response = self.client.get(reverse("alerts:list"))
         self.assertEqual(response.context["unread_alerts_count"], 0)
+        # Le statut est propre à chaque utilisateur : l'administrateur ne l'a pas encore lue
+        self.assertFalse(alert.is_read_by(admin))
+        self.client.force_login(admin)
+        self.assertEqual(self.client.get(reverse("alerts:list")).context["unread_alerts_count"], 1)
+
+    def test_mark_all_read_only_for_current_user(self):
+        make_vehicle(status=Vehicle.Status.IMMOBILIZED)
+        make_vehicle(status=Vehicle.Status.IMMOBILIZED)
+        generate_alerts()
+        manager, other = make_user(User.Role.MANAGER), make_user(User.Role.MANAGER)
+        self.client.force_login(manager)
+        self.client.post(reverse("alerts:mark_all_read"))
+        self.assertEqual(Alert.objects.unread_for(manager).count(), 0)
+        self.assertEqual(Alert.objects.unread_for(other).count(), 2)
 
     def test_management_command(self):
         from io import StringIO

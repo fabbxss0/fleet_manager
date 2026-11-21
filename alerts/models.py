@@ -1,7 +1,22 @@
 """Modèle Alerte : notification générée automatiquement à partir des échéances."""
+from django.conf import settings
 from django.db import models
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 from django.urls import reverse
+
+
+class AlertQuerySet(models.QuerySet):
+    """Le statut « lue » dépend de l'utilisateur : chacun gère ses propres alertes lues."""
+
+    def with_read_state(self, user):
+        """Ajoute l'attribut `is_read` (vrai si CET utilisateur a lu l'alerte)."""
+        return self.annotate(is_read=Exists(AlertRead.objects.filter(alert=OuterRef("pk"), user=user)))
+
+    def unread_for(self, user):
+        return self.with_read_state(user).filter(is_read=False)
+
+    def read_for(self, user):
+        return self.with_read_state(user).filter(is_read=True)
 
 
 class Alert(models.Model):
@@ -27,7 +42,8 @@ class Alert(models.Model):
     description = models.TextField("description")
     category = models.CharField("catégorie", max_length=30, choices=Category.choices)
     priority = models.PositiveSmallIntegerField("priorité", choices=Priority.choices, default=Priority.INFO)
-    is_read = models.BooleanField("lue", default=False)
+    read_by = models.ManyToManyField(settings.AUTH_USER_MODEL, through="AlertRead", related_name="read_alerts",
+                                     blank=True, verbose_name="lue par")
     is_resolved = models.BooleanField(
         "résolue", default=False, help_text="La situation à l'origine de l'alerte n'existe plus."
     )
@@ -51,14 +67,25 @@ class Alert(models.Model):
     class Meta:
         verbose_name = "alerte"
         verbose_name_plural = "alertes"
-        ordering = ["is_read", "-priority", "-created_at"]
+        ordering = ["-priority", "-created_at"]
         constraints = [
             # Une seule alerte active (non résolue) par situation
             models.UniqueConstraint(fields=["dedup_key"], condition=Q(is_resolved=False), name="unique_open_alert"),
         ]
 
+    objects = AlertQuerySet.as_manager()
+
     def __str__(self):
         return self.title
+
+    def mark_read(self, user):
+        AlertRead.objects.get_or_create(alert=self, user=user)
+
+    def mark_unread(self, user):
+        AlertRead.objects.filter(alert=self, user=user).delete()
+
+    def is_read_by(self, user):
+        return AlertRead.objects.filter(alert=self, user=user).exists()
 
     @property
     def target_url(self):
@@ -78,3 +105,15 @@ class Alert(models.Model):
             "ASSURANCE": "shield-check", "PERMIS": "person-vcard", "ENTRETIEN": "tools",
             "CONTROLE_TECHNIQUE": "clipboard-check", "VEHICULE": "car-front", "AFFECTATION": "arrow-left-right", "CARBURANT": "fuel-pump", "VIGNETTE": "receipt", "SINISTRE": "exclamation-diamond",
         }.get(self.category, "bell")
+
+
+class AlertRead(models.Model):
+    """Table d'association : tel utilisateur a lu telle alerte, à telle date."""
+    alert = models.ForeignKey(Alert, on_delete=models.CASCADE, related_name="reads")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="alert_reads")
+    read_at = models.DateTimeField("lue le", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "lecture d'alerte"
+        verbose_name_plural = "lectures d'alertes"
+        constraints = [models.UniqueConstraint(fields=["alert", "user"], name="unique_alert_read_per_user")]

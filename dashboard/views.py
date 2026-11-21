@@ -22,11 +22,12 @@ def home(request):
 def dashboard(request):
     context = {
         "page_title": "Tableau de bord",
-        "kpis": services.get_kpis(),
+        "kpis": services.get_kpis(request.user),
         "charts": services.get_chart_data(),
         "latest_assignments": Assignment.objects.select_related("vehicle", "driver")[:6],
         "latest_maintenances": Maintenance.objects.select_related("vehicle")[:6],
-        "urgent_alerts": Alert.objects.filter(is_resolved=False, priority__gte=Alert.Priority.URGENT)
+        "urgent_alerts": Alert.objects.with_read_state(request.user)
+        .filter(is_resolved=False, priority__gte=Alert.Priority.URGENT)
         .order_by("-priority", "-created_at")[:6],
         "deadlines": services.get_upcoming_deadlines(),
     }

@@ -26,7 +26,7 @@ def _expired_insurance_vehicle_count(today):
     return count
 
 
-def get_kpis():
+def get_kpis(user=None):
     today = timezone.localdate()
     status_counts = dict(Vehicle.objects.values_list("status").annotate(n=Count("id")))
     schedules = maintenance_services.get_due_schedules()
@@ -42,7 +42,8 @@ def get_kpis():
         "expired_insurances": _expired_insurance_vehicle_count(today),
         "maintenance_due": len(schedules),
         "maintenance_overdue": sum(1 for s in schedules if s["state"] == "overdue"),
-        "unread_alerts": Alert.objects.filter(is_resolved=False, is_read=False).count(),
+        "open_alerts": Alert.objects.filter(is_resolved=False).count(),
+        "unread_alerts": Alert.objects.filter(is_resolved=False).unread_for(user).count() if user else None,
         "year_expenses": maintenance_services.total_cost(Maintenance.objects.filter(date__year=today.year)),
         "year_fuel": fuel_services.total_amount(FuelEntry.objects.filter(date__year=today.year)),
     }

@@ -219,7 +219,7 @@ def report_general(date_from, date_to):
         ["Affectations en cours", k["active_assignments"]],
         ["Véhicules avec assurance expirée", k["expired_insurances"]],
         ["Entretiens à effectuer", k["maintenance_due"]],
-        ["Alertes non lues", k["unread_alerts"]],
+        ["Alertes actives", k["open_alerts"]],
         ["Dépenses d'entretien sur la période (FCFA)", maintenance_services.total_cost(maint_qs)],
         ["Dépenses de carburant sur la période (FCFA)",
          fuel_services.total_amount(_period(FuelEntry.objects.all(), "date", date_from, date_to))],
