@@ -28,3 +28,12 @@
 </div></div>
 {% endwith %}
 {% endblock %}
+{% block extra_js %}
+<script>
+  // Sur petit écran, on fait défiler le planning jusqu'au jour courant
+  (() => {
+    const box = document.querySelector(".planning-scroll"), today = document.querySelector(".pl-head.today");
+    if (box && today && box.scrollWidth > box.clientWidth) box.scrollLeft = today.offsetLeft - 200;
+  })();
+</script>
+{% endblock %}
