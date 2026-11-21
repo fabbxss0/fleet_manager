@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load fleet_tags %}
+{% block content %}
+<div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+  <div class="fm-chips">
+    <a href="?" class="fm-chip {% if not current_filters.status %}active{% endif %}">Tous</a>
+    {% for v, l in statuses %}<a href="?status={{ v }}" class="fm-chip {% if current_filters.status == v %}active{% endif %}">{{ l }}</a>{% endfor %}
+  </div>
+  <a href="{% url 'claims:create' %}" class="btn btn-primary ms-auto"><i class="bi bi-exclamation-diamond me-1"></i>Déclarer un sinistre</a>
+</div>
+<div class="row g-3 mb-3">
+  <div class="col-6 col-lg-3"><div class="card kpi"><div class="kpi-icon tone-orange"><i class="bi bi-exclamation-diamond"></i></div><div><div class="kpi-value">{{ totals.count }}</div><div class="kpi-label">Sinistres ({{ totals.open }} en cours)</div></div></div></div>
+  <div class="col-6 col-lg-3"><div class="card kpi"><div class="kpi-icon tone-red"><i class="bi bi-tools"></i></div><div><div class="kpi-value fs-5">{{ totals.cost|fcfa }}</div><div class="kpi-label">Coût des dégâts</div></div></div></div>
+  <div class="col-6 col-lg-3"><div class="card kpi"><div class="kpi-icon tone-green"><i class="bi bi-shield-check"></i></div><div><div class="kpi-value fs-5">{{ totals.indemnity|fcfa }}</div><div class="kpi-label">Indemnités reçues</div></div></div></div>
+  <div class="col-6 col-lg-3"><div class="card kpi"><div class="kpi-icon tone-navy"><i class="bi bi-cash-stack"></i></div><div><div class="kpi-value fs-5">{{ totals.net|fcfa }}</div><div class="kpi-label">Reste à charge</div></div></div></div>
+</div>
+<div class="card">
+  <form class="fm-toolbar js-autofilter" method="get">
+    {% if current_filters.status %}<input type="hidden" name="status" value="{{ current_filters.status }}">{% endif %}
+    <input type="search" name="q" value="{{ q }}" class="form-control fm-filter-search" placeholder="Véhicule, lieu, conducteur, n° de PV…" data-autofocus>
+    <select name="claim_type" class="form-select"><option value="">Tous les types</option>
+      {% for v, l in types %}<option value="{{ v }}" {% if current_filters.claim_type == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+    <select name="insurance_status" class="form-select"><option value="">Suivi assurance</option>
+      {% for v, l in insurance_statuses %}<option value="{{ v }}" {% if current_filters.insurance_status == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+    <select name="vehicle" class="form-select"><option value="">Tous les véhicules</option>
+      {% for v in vehicles %}<option value="{{ v.pk }}" {% if current_filters.vehicle == v.pk|stringformat:"s" %}selected{% endif %}>{{ v.registration_number }}</option>{% endfor %}</select>
+    <input type="date" name="du" value="{{ du }}" class="form-control" title="Du"><input type="date" name="au" value="{{ au }}" class="form-control" title="Au">
+  </form>
+  <div class="table-responsive"><table class="table table-hover">
+    <thead><tr><th>Date</th><th>Véhicule</th><th>Sinistre</th><th>Conducteur</th><th>Assurance</th><th class="text-end">Coût</th><th class="text-end">Reste à charge</th><th>Statut</th></tr></thead>
+    <tbody>
+    {% for c in object_list %}
+      <tr>
+        <td>{{ c.date|date:"d/m/Y" }}</td>
+        <td><a href="{{ c.vehicle.get_absolute_url }}" class="plate">{{ c.vehicle.registration_number }}</a></td>
+        <td><a href="{{ c.get_absolute_url }}" class="cell-main">{{ c.get_claim_type_display }}</a><div class="cell-sub">{{ c.location }}{% if c.injuries %} · <span class="text-danger">blessés</span>{% endif %}</div></td>
+        <td>{{ c.driver.full_name|default:"—" }}</td>
+        <td><span class="badge {% if c.insurance_status == 'INDEMNISE' %}badge-soft-success{% elif c.insurance_status == 'REFUSE' %}badge-soft-danger{% elif c.insurance_status == 'NON_DECLARE' %}badge-soft-warning{% else %}badge-soft-info{% endif %}">{{ c.get_insurance_status_display }}</span></td>
+        <td class="text-end tabular">{{ c.final_cost|fcfa }}</td>
+        <td class="text-end tabular fw-semibold">{{ c.net_cost|fcfa }}</td>
+        <td><span class="badge {% if c.status == 'CLOTURE' %}badge-soft-success{% elif c.status == 'EN_REPARATION' %}badge-soft-warning{% else %}badge-soft-orange{% endif %}">{{ c.get_status_display }}</span></td>
+      </tr>
+    {% empty %}<tr><td colspan="8">{% url 'claims:create' as create_url %}{% include "partials/empty.html" with icon="shield-exclamation" title="Aucun sinistre" text="Aucun sinistre ne correspond à ces critères." action_url=create_url action_label="Déclarer un sinistre" %}</td></tr>{% endfor %}
+    </tbody></table></div>
+  {% include "partials/pagination.html" %}
+</div>
+{% endblock %}

@@ -79,6 +79,7 @@
         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-ent" type="button">Entretiens</button></li>
         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-ass" type="button">Assurances</button></li>
         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-fuel" type="button">Carburant</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-claims" type="button">Sinistres{% if claims %} <span class="badge badge-soft-orange">{{ claims|length }}</span>{% endif %}</button></li>
       </ul>
       <div class="tab-content">
         <div class="tab-pane fade show active card-body" id="t-hist">
@@ -103,6 +104,11 @@
           <thead><tr><th>Date</th><th class="text-end">Compteur</th><th class="text-end">Litres</th><th class="text-end">Distance</th><th class="text-end">L/100 km</th><th class="text-end">Montant</th></tr></thead><tbody>
           {% for e in fuel.rows reversed %}<tr><td>{{ e.date|date:"d/m/Y" }}</td><td class="text-end tabular">{{ e.mileage|km }}</td><td class="text-end tabular">{{ e.liters }} L</td><td class="text-end tabular">{{ e.distance|km }}</td><td class="text-end tabular">{{ e.consumption|default:"—" }}</td><td class="text-end tabular">{{ e.total_amount|fcfa }}</td></tr>
           {% empty %}<tr><td colspan="6" class="text-center text-muted py-4">Aucun plein.</td></tr>{% endfor %}</tbody></table></div></div>
+        <div class="tab-pane fade" id="t-claims"><div class="table-responsive"><table class="table">
+          <thead><tr><th>Date</th><th>Sinistre</th><th>Conducteur</th><th class="text-end">Reste à charge</th><th>Statut</th></tr></thead><tbody>
+          {% for c in claims %}<tr><td>{{ c.date|date:"d/m/Y" }}</td><td><a href="{{ c.get_absolute_url }}">{{ c.get_claim_type_display }}</a></td><td>{{ c.driver.full_name|default:"—" }}</td><td class="text-end tabular">{{ c.net_cost|fcfa }}</td><td>{{ c.get_status_display }}</td></tr>
+          {% empty %}<tr><td colspan="5" class="text-center text-muted py-4">Aucun sinistre.</td></tr>{% endfor %}</tbody></table></div>
+          <div class="p-3 border-top"><a href="{% url 'claims:create' %}?vehicle={{ v.pk }}" class="btn btn-sm btn-light"><i class="bi bi-plus-lg me-1"></i>Déclarer un sinistre</a></div></div>
       </div>
     </div>
   </div>

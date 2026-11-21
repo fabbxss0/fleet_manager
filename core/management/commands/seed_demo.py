@@ -24,6 +24,8 @@ from assignments.models import Assignment
 from assignments.services import create_assignment
 from core.models import AppSettings
 from drivers.models import Driver
+from claims.models import Claim
+from claims.services import save_claim
 from fuel.models import FuelEntry
 from fuel.services import save_fuel_entry
 from insurance.models import Insurance
@@ -100,6 +102,7 @@ class Command(BaseCommand):
             self._create_assignments(vehicles, drivers)
             self._set_special_statuses(vehicles)
             self._create_fuel_entries(vehicles, drivers)
+            self._create_claims(vehicles)
         result = generate_alerts()
         # Quelques alertes d'information déjà lues, pour montrer les deux états
         for alert in Alert.objects.filter(priority=Alert.Priority.INFO)[:2]:
@@ -108,7 +111,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(
             f"Données créées : {Vehicle.objects.count()} véhicules, {Driver.objects.count()} conducteurs, "
             f"{Assignment.objects.count()} affectations, {Maintenance.objects.count()} entretiens, "
-            f"{Insurance.objects.count()} assurances, {FuelEntry.objects.count()} pleins, "
+            f"{Insurance.objects.count()} assurances, {FuelEntry.objects.count()} pleins, {Claim.objects.count()} sinistres, "
             f"{result['open']} alertes."))
         self.stdout.write("Comptes de démonstration :")
         for username, password in DEMO_PASSWORDS.items():
@@ -117,6 +120,7 @@ class Command(BaseCommand):
     def _reset(self):
         Alert.objects.all().delete()
         AuditLog.objects.all().delete()
+        Claim.objects.all().delete()
         FuelEntry.objects.all().delete()
         Assignment.objects.all().delete()
         Maintenance.objects.all().delete()
@@ -319,3 +323,28 @@ class Command(BaseCommand):
                     mileage=min(km, vehicle.mileage), liters=liters, unit_price=Decimal(price),
                     station=stations[(index + n) % len(stations)], full_tank=True,
                 ))
+
+    def _create_claims(self, vehicles):
+        """Trois sinistres : un clôturé et indemnisé, un non déclaré, un qui traîne en réparation."""
+        damaged = Assignment.objects.filter(return_condition="LEGER").first()
+        if damaged:
+            save_claim(Claim(
+                vehicle=damaged.vehicle, assignment=damaged, driver=damaged.driver, claim_type="ACCIDENT",
+                date=damaged.actual_return_date, location="Avenue Kwame N'Krumah, Ouagadougou",
+                description="Accrochage à faible vitesse lors d'un stationnement : portière arrière rayée.",
+                third_party_involved=True, police_report_number="CONSTAT-AMIABLE-0142",
+                estimated_cost=Decimal(180_000), repair_cost=Decimal(165_000), insurance_status="INDEMNISE",
+                insurance_claim_number="DOS-2026-0571", indemnity_amount=Decimal(115_000), status="CLOTURE",
+            ))
+        save_claim(Claim(
+            vehicle=Vehicle.objects.get(pk=vehicles[8].pk), claim_type="ACCIDENT", date=self.today - timedelta(days=8),
+            location="RN1, sortie de Sabou", description="Sortie de route sur chaussée glissante. Pont arrière endommagé.",
+            injuries=False, police_report_number="PV-GN-2026-0388", estimated_cost=Decimal(1_450_000),
+            insurance_status="NON_DECLARE", status="OUVERT",
+        ))
+        save_claim(Claim(
+            vehicle=Vehicle.objects.get(pk=vehicles[3].pk), claim_type="BRIS_GLACE", date=self.today - timedelta(days=41),
+            location="Marché de Rood Woko", description="Pare-brise fissuré par un projectile.",
+            estimated_cost=Decimal(260_000), insurance_status="EN_COURS", insurance_claim_number="DOS-2026-0612",
+            status="EN_REPARATION",
+        ))

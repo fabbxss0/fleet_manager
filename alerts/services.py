@@ -183,8 +183,33 @@ def fuel_candidates(cfg):
         )
 
 
+CLAIM_DECLARATION_DAYS = 5   # délai usuel de déclaration à l'assureur
+CLAIM_STALE_DAYS = 30
+
+
+def claim_candidates(cfg):
+    """Sinistres non déclarés à l'assureur après 5 jours, et sinistres ouverts depuis plus de 30 jours."""
+    from claims.models import Claim
+
+    today = timezone.localdate()
+    for claim in Claim.objects.exclude(status=Claim.Status.CLOSED).select_related("vehicle"):
+        reg, age = claim.vehicle.registration_number, (today - claim.date).days
+        links = {"claim": claim, "vehicle": claim.vehicle, "driver": claim.driver}
+        if (claim.insurance_status == Claim.InsuranceStatus.NOT_DECLARED and claim.insurance_id
+                and age >= CLAIM_DECLARATION_DAYS):
+            yield Candidate(f"claim:{claim.pk}:non_declare", f"Sinistre non déclaré à l'assureur — {reg}",
+                            f"{claim.get_claim_type_display()} du {_fmt(claim.date)} : déclarez-le à "
+                            f"{claim.insurance.company} pour ne pas perdre la prise en charge.",
+                            C.CLAIM, P.URGENT, links)
+        if age > CLAIM_STALE_DAYS:
+            yield Candidate(f"claim:{claim.pk}:ouvert", f"Sinistre ouvert depuis {CLAIM_STALE_DAYS}+ jours — {reg}",
+                            f"{claim.get_claim_type_display()} du {_fmt(claim.date)} toujours « "
+                            f"{claim.get_status_display()} ». Relancez le garage ou l'assureur.",
+                            C.CLAIM, P.WARNING, links)
+
+
 RULES = [insurance_candidates, license_candidates, vignette_candidates, maintenance_candidates, vehicle_candidates,
-         assignment_candidates, fuel_candidates]
+         assignment_candidates, fuel_candidates, claim_candidates]
 
 
 @transaction.atomic

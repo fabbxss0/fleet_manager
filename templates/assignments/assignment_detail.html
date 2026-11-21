@@ -32,7 +32,8 @@
     <dt>Motif</dt><dd>{{ a.purpose }}</dd>
     <dt>Destination</dt><dd>{{ a.destination|default:"—" }}</dd>
     <dt>État au retour</dt><dd>{% if a.return_condition %}<span class="badge {% if a.return_condition == 'RAS' %}badge-soft-success{% elif a.return_condition == 'LEGER' %}badge-soft-warning{% else %}badge-soft-danger{% endif %}">{{ a.get_return_condition_display }}</span>{% else %}—{% endif %}</dd>
-    {% if a.damage_notes %}<dt>Dommages</dt><dd>{{ a.damage_notes|linebreaksbr }}</dd>{% endif %}
+    {% if a.damage_notes %}<dt>Dommages</dt><dd>{{ a.damage_notes|linebreaksbr }}
+      {% if not a.claims.exists %}<br><a href="{% url 'claims:create' %}?vehicle={{ a.vehicle_id }}&driver={{ a.driver_id }}&assignment={{ a.pk }}" class="btn btn-sm btn-primary mt-2"><i class="bi bi-exclamation-diamond me-1"></i>Déclarer un sinistre</a>{% endif %}</dd>{% endif %}
     <dt>Observations</dt><dd>{{ a.notes|default:"—"|linebreaksbr }}</dd>
   </dl></div></div></div>
 </div>

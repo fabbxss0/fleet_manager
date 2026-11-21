@@ -43,9 +43,10 @@ class VehicleDetailView(StaffRequiredMixin, PageTitleMixin, DetailView):
         from fuel.services import vehicle_fuel_summary
 
         context["fuel"] = vehicle_fuel_summary(vehicle)
+        context["claims"] = vehicle.claims.select_related("driver")
         context["has_history"] = (
             vehicle.assignments.exists() or vehicle.maintenances.exists() or vehicle.insurances.exists()
-            or vehicle.fuel_entries.exists()
+            or vehicle.fuel_entries.exists() or vehicle.claims.exists()
         )
         # Chronologie unifiée (historique du véhicule)
         timeline = []

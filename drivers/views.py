@@ -50,6 +50,7 @@ class DriverDetailView(StaffRequiredMixin, PageTitleMixin, DetailView):
         assignments = self.object.assignments.select_related("vehicle")
         context["assignments"] = assignments
         context["total_distance"] = sum(a.distance or 0 for a in assignments)
+        context["claims"] = self.object.claims.select_related("vehicle")
         context["alerts"] = self.object.alerts.filter(is_resolved=False)
         context["warning_days"] = AppSettings.load().alert_days_warning
         return context

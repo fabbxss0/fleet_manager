@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<form class="card" method="post" enctype="multipart/form-data" novalidate>{% csrf_token %}
+  <div class="card-header"><i class="bi bi-exclamation-diamond"></i> {{ page_title }}</div>
+  {% include "partials/form_errors.html" %}
+  <div class="fm-form-section"><h6><i class="bi bi-geo-alt"></i> Le sinistre</h6><div class="row">
+    {% include "partials/field.html" with field=form.vehicle col="col-md-4" %}
+    {% include "partials/field.html" with field=form.claim_type col="col-md-4" %}
+    {% include "partials/field.html" with field=form.date col="col-md-4" %}
+    {% include "partials/field.html" with field=form.location col="col-md-6" %}
+    {% include "partials/field.html" with field=form.driver col="col-md-6" %}
+    {% include "partials/field.html" with field=form.description col="col-12" %}
+    {% include "partials/field.html" with field=form.third_party_involved col="col-md-3" %}
+    {% include "partials/field.html" with field=form.injuries col="col-md-3" %}
+    {% include "partials/field.html" with field=form.police_report_number col="col-md-6" %}
+    {% if form.immobilize %}{% include "partials/field.html" with field=form.immobilize col="col-12" %}{% endif %}
+  </div></div>
+  <div class="fm-form-section"><h6><i class="bi bi-cash-coin"></i> Coûts et assurance</h6><div class="row">
+    {% include "partials/field.html" with field=form.estimated_cost col="col-md-4" %}
+    {% include "partials/field.html" with field=form.repair_cost col="col-md-4" %}
+    {% include "partials/field.html" with field=form.status col="col-md-4" %}
+    {% include "partials/field.html" with field=form.insurance col="col-md-4" %}
+    {% include "partials/field.html" with field=form.insurance_status col="col-md-4" %}
+    {% include "partials/field.html" with field=form.insurance_claim_number col="col-md-4" %}
+    {% include "partials/field.html" with field=form.indemnity_amount col="col-md-4" %}
+  </div></div>
+  <div class="fm-form-section"><h6><i class="bi bi-paperclip"></i> Pièces jointes</h6><div class="row">
+    {% include "partials/field.html" with field=form.photo %}
+    {% include "partials/field.html" with field=form.document %}
+  </div></div>
+  <div class="fm-form-actions">
+    <a href="{% if object %}{{ object.get_absolute_url }}{% else %}{% url 'claims:list' %}{% endif %}" class="btn btn-light">Annuler</a>
+    <button class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Enregistrer</button>
+  </div>
+</form>
+{% endblock %}

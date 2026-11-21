@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "maintenance",
     "insurance",
     "fuel",
+    "claims",
     "audit",
     "alerts",
     "dashboard",

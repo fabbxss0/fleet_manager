@@ -15,6 +15,8 @@ from django.utils import timezone
 from alerts.models import Alert
 from assignments.models import Assignment
 from drivers.models import Driver
+from claims import services as claim_services
+from claims.models import Claim
 from fuel import services as fuel_services
 from fuel.models import FuelEntry
 from insurance.models import Insurance
@@ -169,6 +171,22 @@ def report_fuel(date_from, date_to):
     return [detail, summary]
 
 
+def report_claims(date_from, date_to):
+    qs = _period(Claim.objects.select_related("vehicle", "driver"), "date", date_from, date_to)
+    rows = [[d(c.date), c.vehicle.registration_number, c.get_claim_type_display(), c.location,
+             c.driver.full_name if c.driver else "—", c.get_insurance_status_display(), c.final_cost,
+             c.indemnity_amount, c.net_cost, c.get_status_display()] for c in qs]
+    t = claim_services.totals(qs)
+    detail = Section("Sinistres et accidents", ["Date", "Véhicule", "Type", "Lieu", "Conducteur", "Assurance",
+                                                "Coût (FCFA)", "Indemnité (FCFA)", "Reste à charge (FCFA)", "Statut"],
+                     rows, ["Total", f"{t['count']} sinistre(s)", "", "", "", "", t["cost"], t["indemnity"], t["net"], ""],
+                     money_columns=(6, 7, 8))
+    types = Section("Répartition par type", ["Type", "Nombre", "Indemnités (FCFA)"],
+                    [[r["label"], r["count"], r["indemnity"] or 0] for r in claim_services.by_type(qs)],
+                    money_columns=(2,), number_columns=(1,))
+    return [detail, types]
+
+
 def report_general(date_from, date_to):
     from dashboard.services import get_kpis
 
@@ -213,6 +231,7 @@ REPORTS = {
     "entretiens": ("Historique des entretiens", "Interventions et coûts (période = date d'intervention).", "tools", report_maintenances, True),
     "assurances": ("Situation des assurances", "Polices et échéances (période = date d'expiration).", "shield-check", report_insurances, True),
     "carburant": ("Carburant et consommation", "Pleins, litres, dépenses et L/100 km (période = date du plein).", "fuel-pump", report_fuel, True),
+    "sinistres": ("Sinistres et accidents", "Sinistres, indemnités et reste à charge (période = date du sinistre).", "exclamation-diamond", report_claims, True),
     "depenses": ("Dépenses d'entretien", "Coûts par véhicule et par type d'intervention.", "cash-coin", report_expenses, True),
 }
 

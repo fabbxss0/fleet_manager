@@ -25,6 +25,7 @@ EXCLUDED_FIELDS = {"id", "created_at", "updated_at", "password", "last_login", "
 def tracked_models():
     from accounts.models import User
     from assignments.models import Assignment
+    from claims.models import Claim
     from core.models import AppSettings
     from drivers.models import Driver
     from fuel.models import FuelEntry
@@ -32,7 +33,7 @@ def tracked_models():
     from maintenance.models import Maintenance
     from vehicles.models import Vehicle
 
-    return [Vehicle, Driver, Assignment, Maintenance, Insurance, FuelEntry, User, AppSettings]
+    return [Vehicle, Driver, Assignment, Maintenance, Insurance, FuelEntry, Claim, User, AppSettings]
 
 
 def display_value(instance, field):

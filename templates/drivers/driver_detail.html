@@ -40,6 +40,7 @@
         <dt>Groupe sanguin</dt><dd>{{ d.blood_group|default:"—" }}</dd>
         <dt>En cas d'urgence</dt><dd>{% if d.emergency_contact_name %}{{ d.emergency_contact_name }}<br><span class="small text-muted">{{ d.emergency_contact_phone }}</span>{% else %}—{% endif %}</dd>
         <dt>Distance totale</dt><dd>{{ total_distance|km }}</dd>
+        <dt>Sinistres</dt><dd>{% for c in claims %}<a href="{{ c.get_absolute_url }}">{{ c.get_claim_type_display }} ({{ c.date|date:"d/m/Y" }})</a><br>{% empty %}Aucun{% endfor %}</dd>
         <dt>Observations</dt><dd>{{ d.notes|default:"—"|linebreaksbr }}</dd>
       </dl>
     </div></div>

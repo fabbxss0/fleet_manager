@@ -14,6 +14,7 @@ class Alert(models.Model):
         ASSIGNMENT = "AFFECTATION", "Affectation"
         FUEL = "CARBURANT", "Carburant"
         TAX = "VIGNETTE", "Vignette / taxe"
+        CLAIM = "SINISTRE", "Sinistre"
 
     class Priority(models.IntegerChoices):
         # Valeurs numériques pour pouvoir trier du plus grave au moins grave
@@ -44,6 +45,7 @@ class Alert(models.Model):
     maintenance = models.ForeignKey(
         "maintenance.Maintenance", on_delete=models.CASCADE, null=True, blank=True, related_name="alerts"
     )
+    claim = models.ForeignKey("claims.Claim", on_delete=models.CASCADE, null=True, blank=True, related_name="alerts")
     fuel_entry = models.ForeignKey("fuel.FuelEntry", on_delete=models.CASCADE, null=True, blank=True, related_name="alerts")
 
     class Meta:
@@ -61,7 +63,7 @@ class Alert(models.Model):
     @property
     def target_url(self):
         """Lien vers l'élément concerné par l'alerte."""
-        for obj in (self.insurance, self.maintenance, self.fuel_entry, self.assignment, self.driver, self.vehicle):
+        for obj in (self.claim, self.insurance, self.maintenance, self.fuel_entry, self.assignment, self.driver, self.vehicle):
             if obj is not None:
                 return obj.get_absolute_url()
         return reverse("alerts:list")
@@ -74,5 +76,5 @@ class Alert(models.Model):
     def category_icon(self):
         return {
             "ASSURANCE": "shield-check", "PERMIS": "person-vcard", "ENTRETIEN": "tools",
-            "CONTROLE_TECHNIQUE": "clipboard-check", "VEHICULE": "car-front", "AFFECTATION": "arrow-left-right", "CARBURANT": "fuel-pump", "VIGNETTE": "receipt",
+            "CONTROLE_TECHNIQUE": "clipboard-check", "VEHICULE": "car-front", "AFFECTATION": "arrow-left-right", "CARBURANT": "fuel-pump", "VIGNETTE": "receipt", "SINISTRE": "exclamation-diamond",
         }.get(self.category, "bell")
