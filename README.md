@@ -43,8 +43,12 @@ python manage.py runserver
 
 Ouvrir ensuite <http://127.0.0.1:8000> dans le navigateur.
 
-> Raccourci : double-cliquer sur `lancer.bat` fait toutes ces étapes au premier lancement,
-> puis démarre simplement le serveur les fois suivantes.
+> Raccourci : double-cliquer sur `lancer.bat` fait toutes ces étapes. À chaque lancement, il applique aussi
+> les nouvelles migrations : la base reste à jour après un `git pull`.
+>
+> **Après un `git pull`**, si le serveur affiche « You have N unapplied migration(s) » ou une erreur
+> « no such column », lancez `python manage.py migrate` (puis `python manage.py seed_demo --reset` pour des
+> données de démonstration complètes).
 >
 > Sous PowerShell, si l'activation est bloquée : `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
 

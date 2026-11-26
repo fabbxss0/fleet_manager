@@ -1,10 +1,14 @@
 """Routes principales de FLEET MANAGER."""
 from django.contrib import admin
+from django.templatetags.static import static
 from django.urls import include, path, re_path
+from django.views.generic import RedirectView
 
 from core.views import protected_media
 
 urlpatterns = [
+    # Les navigateurs demandent /favicon.ico d'office : on renvoie vers l'icône de l'application
+    path("favicon.ico", RedirectView.as_view(url=static("img/favicon.svg"), permanent=True)),
     path("admin/", admin.site.urls),
     path("", include("dashboard.urls")),
     path("comptes/", include("accounts.urls")),
