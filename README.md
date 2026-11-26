@@ -8,6 +8,7 @@ entretiens, assurances, **alertes automatiques**, tableau de bord et rapports PD
 - Toutes les ressources front (Bootstrap, icônes, Chart.js, police Inter) sont **incluses localement** :
   l'application fonctionne sans connexion Internet (pratique pour une soutenance).
 - Code source : <https://github.com/fabbxss0/fleet_manager> · Mise en ligne : voir [DEPLOIEMENT.md](DEPLOIEMENT.md)
+- **Pour comprendre l'application** (but, fonctionnement, démonstration) : [GUIDE_APPLICATION.md](GUIDE_APPLICATION.md)
 
 ---
 
