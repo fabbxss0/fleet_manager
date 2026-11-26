@@ -68,7 +68,7 @@ Réinitialiser les données de démonstration : `python manage.py seed_demo --re
 | `python manage.py runserver` | Démarre le serveur de développement |
 | `python manage.py seed_demo [--reset]` | Données fictives : 15 véhicules, 10 conducteurs, affectations, entretiens, assurances, pleins, sinistres, alertes |
 | `python manage.py generate_alerts [--sans-email]` | Vérifie toutes les échéances, crée les alertes manquantes (sans doublon) et envoie les nouvelles alertes urgentes par email |
-| `python manage.py test` | Lance les 102 tests automatisés |
+| `python manage.py test` | Lance les 115 tests automatisés |
 | `python manage.py createsuperuser` | Crée un administrateur supplémentaire |
 
 ### Génération des alertes
@@ -168,6 +168,7 @@ Aucune modification du code n'est nécessaire.
 - L'immatriculation est unique (normalisée en majuscules).
 - Le kilométrage ne peut jamais diminuer ; la date d'acquisition ne peut pas être dans le futur ni avant l'année de fabrication.
 - « Affecté » et « En entretien » sont des statuts **automatiques** ; « Disponible », « Immobilisé » et « Hors service » se choisissent à la main.
+- Un véhicule en mission peut être « Immobilisé » (panne en route), mais pas « Disponible » ni « Hors service » avant l'enregistrement de son retour.
 
 **Affectations** (`assignments/services.py`)
 - Un véhicule ne peut pas avoir deux affectations actives ; un conducteur ne peut pas avoir deux véhicules.
@@ -178,9 +179,11 @@ Aucune modification du code n'est nécessaire.
 - Au retour, le compteur du véhicule est mis à jour et le véhicule redevient disponible,
   sauf s'il a été immobilisé, mis hors service ou s'il est en entretien.
 - Une affectation peut être annulée : elle reste dans l'historique avec le statut « Annulée ».
+- Une affectation terminée ou annulée ne peut plus être modifiée : elle fait partie de l'historique.
 
 **Entretiens** (`maintenance/services.py`)
 - Un entretien « En cours » passe le véhicule « En entretien » ; terminé, le véhicule retrouve son statut normal.
+- Un entretien ne peut pas démarrer (« En cours ») tant que le véhicule est en mission, ni à la création ni à la modification.
 - Entretien périodique : on renseigne la date et/ou le kilométrage du prochain entretien. Le dernier entretien
   terminé de chaque type par véhicule définit l'échéance. Il est signalé « bientôt » 15 jours / 1 000 km avant
   (seuils réglables) et « dépassé » ensuite.
@@ -251,7 +254,11 @@ pour l'administrateur.
 - Toutes les validations sont faites par Django (formulaires, `clean()` des modèles, contraintes SQL) ;
   le JavaScript n'apporte que du confort.
 - Fichiers téléversés : extension, taille (photos 2 Mo, documents 5 Mo), contenu vérifié (Pillow pour
-  les images, signature `%PDF-` pour les PDF), servis **uniquement aux utilisateurs connectés**.
+  les images, signature `%PDF-` pour les PDF), servis **uniquement aux utilisateurs connectés**. Les documents
+  internes (factures, attestations, constats, reçus) sont réservés aux administrateurs et gestionnaires ;
+  un conducteur ne voit que les photos.
+- Les paramètres d'URL invalides (`?vehicle=abc`, `?du=hier`) sont ignorés proprement (`core/filters.py`) :
+  aucune erreur serveur.
 - Confirmation par fenêtre modale avant toute suppression.
 - En production (`DJANGO_DEBUG=0`) : clé secrète obligatoire, cookies sécurisés, redirection HTTPS,
   en-têtes de sécurité. Paramètres dans un fichier `.env` (modèle `.env.example`), jamais envoyé sur GitHub.
@@ -263,13 +270,14 @@ pour l'administrateur.
 python manage.py test
 ```
 
-102 tests couvrent : ajout de véhicule, unicité de l'immatriculation (formulaire et base), ajout de conducteur,
+115 tests couvrent : ajout de véhicule, unicité de l'immatriculation (formulaire et base), ajout de conducteur,
 affectation, refus de deux affectations actives (service et contrainte SQL), refus d'un véhicule immobilisé /
 en entretien / hors service, validation des dates et kilométrages, génération des alertes (niveaux, absence de
 doublons, résolution, escalade), permissions des trois rôles, calcul des dépenses d'entretien, échéances
 périodiques, tableau de bord et exports PDF / Excel de tous les rapports, carburant et consommation,
 journal d'audit, sinistres, coût de revient, planning, lecture des alertes par utilisateur, emails
-et import Excel (y compris le refus complet d'un fichier contenant une erreur).
+et import Excel (y compris le refus complet d'un fichier contenant une erreur), accès aux documents par rôle,
+robustesse face aux paramètres d'URL invalides.
 
 ## 9. Fonctionnalités
 
