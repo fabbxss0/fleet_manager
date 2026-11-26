@@ -189,3 +189,30 @@ class VehicleImportTests(TestCase):
     def test_check_only_does_not_save(self):
         self.client.post(reverse("vehicles:import"), {"action": "verifier", "fichier": self._file([self._row("11 IM 0005", "C5")])})
         self.assertFalse(Vehicle.objects.filter(registration_number="11 IM 0005").exists())
+
+
+class VehicleStatusDuringMissionTests(TestCase):
+    def _post_status(self, status):
+        from datetime import timedelta
+
+        from django.forms.models import model_to_dict
+
+        from assignments.models import Assignment
+        from core.testing import make_driver
+
+        vehicle = make_vehicle(status=Vehicle.Status.ASSIGNED)
+        Assignment.objects.create(vehicle=vehicle, driver=make_driver(), start_date=today(),
+                                  expected_end_date=today() + timedelta(days=2), start_mileage=vehicle.mileage, purpose="x")
+        data = model_to_dict(vehicle, exclude=["photo", "id"])
+        data.update(status=status, acquisition_date=vehicle.acquisition_date.isoformat(),
+                    first_registration_date="", vignette_expiry_date="")
+        return VehicleForm(data=data, instance=vehicle)
+
+    def test_out_of_service_refused_during_mission(self):
+        form = self._post_status(Vehicle.Status.OUT_OF_SERVICE)
+        self.assertFalse(form.is_valid())
+        self.assertIn("retour", form.errors["status"][0])
+
+    def test_immobilized_allowed_during_mission(self):
+        form = self._post_status(Vehicle.Status.IMMOBILIZED)
+        self.assertTrue(form.is_valid(), form.errors)

@@ -71,6 +71,9 @@ class VehicleForm(BootstrapFormMixin, forms.ModelForm):
         elif first_reg and year and first_reg.year < year:
             self.add_error("first_registration_date", "La mise en circulation ne peut pas précéder l'année de fabrication.")
         status = data.get("status")
-        if self.instance.pk and status == Vehicle.Status.AVAILABLE and self.instance.assignments.filter(status="EN_COURS").exists():
-            self.add_error("status", "Ce véhicule a une affectation en cours : enregistrez d'abord son retour.")
+        in_mission = self.instance.pk and self.instance.assignments.filter(status="EN_COURS").exists()
+        # « Immobilisé » reste possible en mission (panne en route) ; « Disponible » et « Hors service » non
+        if in_mission and status in (Vehicle.Status.AVAILABLE, Vehicle.Status.OUT_OF_SERVICE):
+            self.add_error("status", f"Ce véhicule a une affectation en cours : enregistrez d'abord son retour "
+                                     f"avant de le passer « {Vehicle.Status(status).label} ».")
         return data
