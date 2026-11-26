@@ -177,3 +177,25 @@ class PlanningTests(TestCase):
         response = self.client.get(reverse("assignments:planning"), {"mois": "2026-02"})
         self.assertContains(response, "Février 2026")
         self.assertEqual(self.client.get(reverse("assignments:planning"), {"mois": "n'importe"}).status_code, 200)
+
+
+class ClosedAssignmentEditTests(TestCase):
+    def test_closed_assignment_cannot_be_edited(self):
+        self.client.force_login(make_user(User.Role.MANAGER))
+        vehicle, driver = make_vehicle(insured=True, mileage=1000), make_driver()
+        assignment = close_assignment(create_assignment(new_assignment(vehicle, driver, purpose="Mission initiale")),
+                                      today(), 1100)
+        url = reverse("assignments:update", args=[assignment.pk])
+        self.assertRedirects(self.client.get(url), assignment.get_absolute_url())
+        self.client.post(url, {"expected_end_date": (today() + timedelta(days=30)).isoformat(), "purpose": "Falsifié"})
+        assignment.refresh_from_db()
+        self.assertEqual(assignment.purpose, "Mission initiale")
+
+    def test_active_assignment_still_editable(self):
+        self.client.force_login(make_user(User.Role.MANAGER))
+        assignment = create_assignment(new_assignment(make_vehicle(insured=True), make_driver()))
+        url = reverse("assignments:update", args=[assignment.pk])
+        self.assertEqual(self.client.get(url).status_code, 200)
+        self.client.post(url, {"expected_end_date": (today() + timedelta(days=5)).isoformat(), "purpose": "Nouveau motif"})
+        assignment.refresh_from_db()
+        self.assertEqual(assignment.purpose, "Nouveau motif")

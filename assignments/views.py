@@ -77,6 +77,21 @@ class AssignmentUpdateView(StaffRequiredMixin, PageTitleMixin, FormMessagesMixin
     page_title = "Modifier l'affectation"
     success_message = "Affectation mise à jour."
 
+    def _refuse_if_closed(self):
+        """Une affectation terminée ou annulée fait partie de l'historique : elle ne se modifie plus."""
+        self.object = self.get_object()
+        if not self.object.is_active:
+            messages.warning(self.request, f"Cette affectation est « {self.object.get_status_display()} » : "
+                                           "elle fait partie de l'historique et ne peut plus être modifiée.")
+            return redirect(self.object.get_absolute_url())
+        return None
+
+    def get(self, request, *args, **kwargs):
+        return self._refuse_if_closed() or super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        return self._refuse_if_closed() or super().post(request, *args, **kwargs)
+
 
 @staff_required
 def assignment_planning(request):
