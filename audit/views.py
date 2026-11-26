@@ -2,6 +2,7 @@ from django.db.models import Q
 from django.views.generic import ListView
 
 from accounts.models import User
+from core.filters import filter_period, parse_int
 from core.permissions import AdminRequiredMixin
 from core.views_mixins import PageTitleMixin
 
@@ -24,12 +25,9 @@ class AuditLogListView(AdminRequiredMixin, PageTitleMixin, ListView):
             queryset = queryset.filter(action=p["action"])
         if p.get("type"):
             queryset = queryset.filter(model_label=p["type"])
-        if p.get("user"):
-            queryset = queryset.filter(user_id=p["user"])
-        if p.get("du"):
-            queryset = queryset.filter(timestamp__date__gte=p["du"])
-        if p.get("au"):
-            queryset = queryset.filter(timestamp__date__lte=p["au"])
+        if parse_int(p.get("user")):
+            queryset = queryset.filter(user_id=parse_int(p["user"]))
+        queryset = filter_period(queryset, p, field="timestamp__date")
         return queryset
 
     def get_context_data(self, **kwargs):

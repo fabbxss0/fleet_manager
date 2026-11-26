@@ -3,6 +3,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView
 
+from core.filters import safe_filter
 from core.permissions import StaffRequiredMixin, staff_required
 from core.views_mixins import PageTitleMixin
 
@@ -23,7 +24,7 @@ class AlertListView(StaffRequiredMixin, PageTitleMixin, ListView):
         # Par défaut on affiche les alertes actives ; ?etat=resolues pour l'historique
         queryset = queryset.filter(is_resolved=params.get("etat") == "resolues")
         if params.get("priorite"):
-            queryset = queryset.filter(priority=params["priorite"])
+            queryset = safe_filter(queryset, priority=params["priorite"])
         if params.get("categorie"):
             queryset = queryset.filter(category=params["categorie"])
         if params.get("lecture") == "non_lues":

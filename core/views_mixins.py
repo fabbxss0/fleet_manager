@@ -1,4 +1,5 @@
 """Mixins génériques pour éviter la duplication dans les vues CRUD."""
+from core.filters import safe_filter
 from django.contrib import messages
 from django.db.models import ProtectedError
 from django.shortcuts import redirect
@@ -68,7 +69,7 @@ class FilteredListMixin:
         for field in self.filter_fields:
             value = self.request.GET.get(field)
             if value:
-                queryset = queryset.filter(**{field: value})
+                queryset = safe_filter(queryset, **{field: value})  # valeur invalide : filtre ignoré
         return queryset
 
     def get_context_data(self, **kwargs):

@@ -4,6 +4,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
+from core.filters import filter_period
 from core.permissions import StaffRequiredMixin, staff_required
 from core.views_mixins import FilteredListMixin, PageTitleMixin
 from vehicles.models import Vehicle
@@ -23,10 +24,7 @@ class ClaimListView(StaffRequiredMixin, PageTitleMixin, FilteredListMixin, ListV
 
     def get_queryset(self):
         queryset = super().get_queryset().select_related("vehicle", "driver")
-        if self.request.GET.get("du"):
-            queryset = queryset.filter(date__gte=self.request.GET["du"])
-        if self.request.GET.get("au"):
-            queryset = queryset.filter(date__lte=self.request.GET["au"])
+        queryset = filter_period(queryset, self.request.GET)
         return queryset
 
     def get_context_data(self, **kwargs):

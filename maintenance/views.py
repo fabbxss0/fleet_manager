@@ -6,6 +6,7 @@ from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
+from core.filters import filter_period, parse_int
 from core.permissions import StaffRequiredMixin, staff_required
 from core.views_mixins import FilteredListMixin, PageTitleMixin
 from vehicles.models import Vehicle
@@ -24,10 +25,7 @@ class MaintenanceListView(StaffRequiredMixin, PageTitleMixin, FilteredListMixin,
 
     def get_queryset(self):
         queryset = super().get_queryset().select_related("vehicle")
-        if self.request.GET.get("du"):
-            queryset = queryset.filter(date__gte=self.request.GET["du"])
-        if self.request.GET.get("au"):
-            queryset = queryset.filter(date__lte=self.request.GET["au"])
+        queryset = filter_period(queryset, self.request.GET)
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -73,7 +71,7 @@ class MaintenanceCreateView(StaffRequiredMixin, PageTitleMixin, MaintenanceSaveM
 
     def get_initial(self):
         initial = super().get_initial()
-        vehicle_id = self.request.GET.get("vehicle")
+        vehicle_id = parse_int(self.request.GET.get("vehicle"))
         if vehicle_id:
             vehicle = Vehicle.objects.filter(pk=vehicle_id).first()
             if vehicle:
@@ -123,10 +121,7 @@ def maintenance_expenses(request):
     """Dépenses d'entretien : total, par véhicule et par mois."""
     queryset = Maintenance.objects.all()
     du, au = request.GET.get("du", ""), request.GET.get("au", "")
-    if du:
-        queryset = queryset.filter(date__gte=du)
-    if au:
-        queryset = queryset.filter(date__lte=au)
+    queryset = filter_period(queryset, request.GET)
     by_vehicle = list(services.cost_by_vehicle(queryset))
     by_type = (
         queryset.exclude(status=Maintenance.Status.CANCELLED).values("intervention_type")
