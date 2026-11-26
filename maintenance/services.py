@@ -1,4 +1,5 @@
 """Logique métier des entretiens : statut du véhicule, échéances, dépenses."""
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Count, Sum
 from django.db.models.functions import TruncMonth
@@ -19,8 +20,12 @@ def save_maintenance(maintenance):
     - à la fin de l'entretien, le véhicule retrouve son statut normal.
     """
     maintenance.full_clean()
-    maintenance.save()
     vehicle = Vehicle.objects.select_for_update().get(pk=maintenance.vehicle_id)
+    # Règle métier : un véhicule ne peut pas être à l'atelier et en mission en même temps
+    if maintenance.status == Maintenance.Status.IN_PROGRESS and vehicle.assignments.filter(status="EN_COURS").exists():
+        raise ValidationError({"vehicle": f"Le véhicule {vehicle.registration_number} est actuellement affecté : "
+                                          "enregistrez son retour avant de démarrer l'entretien."})
+    maintenance.save()
     if maintenance.mileage > vehicle.mileage and maintenance.status in (
         Maintenance.Status.IN_PROGRESS, Maintenance.Status.DONE,
     ):

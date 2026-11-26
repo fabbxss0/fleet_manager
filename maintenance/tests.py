@@ -85,3 +85,41 @@ class DueScheduleTests(TestCase):
         save_maintenance(maintenance(vehicle, date=today() - timedelta(days=5), mileage=19900,
                                      next_date=today() + timedelta(days=180)))
         self.assertEqual(get_due_schedules(), [])
+
+
+class MaintenanceDuringAssignmentTests(TestCase):
+    def setUp(self):
+        from assignments.models import Assignment
+        from core.testing import make_driver
+
+        self.vehicle = make_vehicle(mileage=10000, status=Vehicle.Status.ASSIGNED)
+        Assignment.objects.create(vehicle=self.vehicle, driver=make_driver(), start_date=today(),
+                                  expected_end_date=today() + timedelta(days=3), start_mileage=10000, purpose="Mission")
+
+    def test_cannot_start_planned_maintenance_on_vehicle_in_mission(self):
+        planned = save_maintenance(maintenance(self.vehicle, status=Maintenance.Status.PLANNED,
+                                               date=today() + timedelta(days=5)))
+        planned.status, planned.date = Maintenance.Status.IN_PROGRESS, today()
+        with self.assertRaises(ValidationError) as ctx:
+            save_maintenance(planned)
+        self.assertIn("vehicle", ctx.exception.message_dict)
+        self.vehicle.refresh_from_db()
+        self.assertEqual(self.vehicle.status, Vehicle.Status.ASSIGNED)
+        self.assertEqual(Maintenance.objects.get(pk=planned.pk).status, Maintenance.Status.PLANNED)
+
+    def test_form_rejects_it_on_update(self):
+        from django.forms.models import model_to_dict
+
+        from maintenance.forms import MaintenanceForm
+
+        planned = save_maintenance(maintenance(self.vehicle, status=Maintenance.Status.PLANNED))
+        data = model_to_dict(planned, exclude=["invoice"])
+        data.update(status=Maintenance.Status.IN_PROGRESS, date=today().isoformat())
+        form = MaintenanceForm(data=data, instance=planned)
+        self.assertFalse(form.is_valid())
+        self.assertIn("vehicle", form.errors)
+
+    def test_planned_maintenance_still_allowed(self):
+        save_maintenance(maintenance(self.vehicle, status=Maintenance.Status.PLANNED, date=today() + timedelta(days=5)))
+        self.vehicle.refresh_from_db()
+        self.assertEqual(self.vehicle.status, Vehicle.Status.ASSIGNED)

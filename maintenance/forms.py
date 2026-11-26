@@ -28,7 +28,8 @@ class MaintenanceForm(BootstrapFormMixin, forms.ModelForm):
         if date and status in (Maintenance.Status.DONE, Maintenance.Status.IN_PROGRESS) and date > timezone.localdate():
             self.add_error("date", "Un entretien en cours ou terminé ne peut pas avoir une date future.")
         vehicle = data.get("vehicle")
-        if status == Maintenance.Status.IN_PROGRESS and vehicle and not self.instance.pk \
+        # Vérifié à la création ET à la modification (ex. un entretien planifié que l'on démarre)
+        if status == Maintenance.Status.IN_PROGRESS and vehicle \
                 and vehicle.assignments.filter(status="EN_COURS").exists():
             self.add_error("vehicle", "Ce véhicule est actuellement affecté : enregistrez son retour avant "
                                       "de le placer en entretien.")
