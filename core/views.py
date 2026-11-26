@@ -3,6 +3,7 @@ from django import forms
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 from django.shortcuts import redirect, render
 from django.views.static import serve
@@ -17,13 +18,22 @@ from .models import AppSettings
 from .permissions import staff_required
 
 
+# Dossiers de photos visibles par tout utilisateur connecté (le conducteur voit son véhicule, son profil…)
+PUBLIC_MEDIA_FOLDERS = {"users", "vehicles", "drivers"}
+
+
 @login_required
 def protected_media(request, path):
     """
-    Sert les fichiers téléversés (photos, factures, attestations) uniquement aux
-    utilisateurs connectés. En production, cette tâche serait confiée au
-    serveur web (ex. X-Accel-Redirect avec Nginx).
+    Sert les fichiers téléversés selon le rôle :
+    - photos (profils, véhicules, conducteurs) : tout utilisateur connecté ;
+    - documents internes (factures, attestations, constats, reçus) et tout autre
+      dossier : administrateurs et gestionnaires uniquement (refus par défaut).
+    En production, on pourrait confier l'envoi au serveur web (ex. X-Accel-Redirect avec Nginx).
     """
+    folder = path.split("/", 1)[0]
+    if folder not in PUBLIC_MEDIA_FOLDERS and not request.user.is_staff_member:
+        raise PermissionDenied("Ce document est réservé aux administrateurs et gestionnaires.")
     return serve(request, path, document_root=settings.MEDIA_ROOT)
 
 

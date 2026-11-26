@@ -43,3 +43,44 @@ class SafeParametersTests(TestCase):
         self.assertIsNone(parse_int("-3"))
         self.assertIsNone(parse_date("hier"))
         self.assertEqual(str(parse_date("2026-11-21")), "2026-11-21")
+
+
+class ProtectedMediaTests(TestCase):
+    def setUp(self):
+        import shutil
+        import tempfile
+
+        from django.test import override_settings
+
+        self.media = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.media)
+        override = override_settings(MEDIA_ROOT=self.media)
+        override.enable()
+        self.addCleanup(override.disable)
+        import os
+
+        for folder, name in (("maintenance", "facture.pdf"), ("insurance", "attestation.pdf"),
+                             ("claims", "constat.pdf"), ("fuel", "recu.pdf"), ("vehicles", "photo.jpg")):
+            os.makedirs(os.path.join(self.media, folder), exist_ok=True)
+            with open(os.path.join(self.media, folder, name), "wb") as f:
+                f.write(b"contenu")
+
+    def test_driver_cannot_open_internal_documents(self):
+        self.client.force_login(make_user(User.Role.DRIVER))
+        for path in ("maintenance/facture.pdf", "insurance/attestation.pdf", "claims/constat.pdf", "fuel/recu.pdf"):
+            with self.subTest(path=path):
+                self.assertEqual(self.client.get(f"/media/{path}").status_code, 403)
+        self.assertEqual(self.client.get("/media/vehicles/photo.jpg").status_code, 200)
+
+    def test_staff_can_open_documents(self):
+        self.client.force_login(make_user(User.Role.MANAGER))
+        self.assertEqual(self.client.get("/media/maintenance/facture.pdf").status_code, 200)
+
+    def test_anonymous_redirected_and_traversal_blocked(self):
+        self.assertEqual(self.client.get("/media/vehicles/photo.jpg").status_code, 302)
+        self.client.force_login(make_user(User.Role.ADMIN))
+        for url in ("/media/../config/settings.py", "/media/vehicles/..%2F..%2Fconfig%2Fsettings.py"):
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertIn(response.status_code, (400, 404))  # jamais servi
+                self.assertNotIn(b"SECRET_KEY", b"".join(getattr(response, "streaming_content", [response.content])))
