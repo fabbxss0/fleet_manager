@@ -6,3 +6,5 @@ staticfiles/
 .venv/
 venv/
 .env
+.coverage
+htmlcov/
