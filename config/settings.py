@@ -198,6 +198,22 @@ DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "FLEET MANAGER <no-rep
 # Adresse du site, utilisée pour les liens dans les emails
 SITE_URL = os.environ.get("SITE_URL", "http://127.0.0.1:8000")
 
+# --- Journalisation pendant les tests ---------------------------------------
+# Les tests provoquent volontairement des refus (403), des pages absentes (404)
+# et des chemins de fichiers suspects : Django les afficherait avec leur trace
+# complète, ce qui noierait le résultat. On les masque UNIQUEMENT pendant les tests.
+import sys  # noqa: E402
+
+if len(sys.argv) > 1 and sys.argv[1] == "test":
+    LOGGING = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "loggers": {
+            "django.request": {"level": "CRITICAL"},
+            "django.security": {"level": "CRITICAL"},
+        },
+    }
+
 # --- Paramètres métier ------------------------------------------------------
 # Délai minimal (en minutes) entre deux régénérations automatiques des alertes
 ALERTS_AUTO_REFRESH_MINUTES = 10
